@@ -1,9 +1,9 @@
 import httpx
 import pytest
-from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
-from loomcast.adapters.runtimes.ollama import OllamaRuntime
-from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
-from loomcast.ports.runtime import RuntimePort
+from adapters.runtimes.lmstudio import LMStudioRuntime
+from adapters.runtimes.ollama import OllamaRuntime
+from common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
+from ports.runtime import RuntimePort
 
 
 def test_ollama_runtime_protocol_instance():

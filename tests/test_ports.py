@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 import pytest
-from loomcast.ports.cache import CachePort
-from loomcast.ports.catalog import CatalogPort
-from loomcast.ports.runtime import RuntimePort
+from ports.cache import CachePort
+from ports.catalog import CatalogPort
+from ports.runtime import RuntimePort
 
 
 class DummyRuntimeAdapter:

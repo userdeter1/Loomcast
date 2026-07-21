@@ -4,10 +4,10 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from loomcast.common.config import LoomcastConfig
-from loomcast.common.exceptions import LoomcastError
-from loomcast.core.manager import LoomcastManager
-from loomcast.domain.entities import RuntimeType
+from common.config import LoomcastConfig
+from common.exceptions import LoomcastError
+from core.manager import LoomcastManager
+from domain.entities import RuntimeType
 
 app = typer.Typer(
     name="loomcast",

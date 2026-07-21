@@ -1,6 +1,6 @@
 import sys
 from typing import List, Optional
-from loomcast.domain.entities import CatalogEntry
+from domain.entities import CatalogEntry
 
 if sys.version_info >= (3, 8):
     from typing import Protocol, runtime_checkable

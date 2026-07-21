@@ -1,11 +1,11 @@
 from typing import Any, Dict, List, Optional, Union
 
-from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
-from loomcast.adapters.runtimes.ollama import OllamaRuntime
-from loomcast.common.config import LoomcastConfig
-from loomcast.common.exceptions import LoomcastError, RuntimeUnavailableError
-from loomcast.domain.entities import RuntimeType
-from loomcast.ports.runtime import RuntimePort
+from adapters.runtimes.lmstudio import LMStudioRuntime
+from adapters.runtimes.ollama import OllamaRuntime
+from common.config import LoomcastConfig
+from common.exceptions import LoomcastError, RuntimeUnavailableError
+from domain.entities import RuntimeType
+from ports.runtime import RuntimePort
 
 
 class LoomcastManager:

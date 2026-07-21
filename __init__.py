@@ -1,18 +1,18 @@
 """Loomcast: Multi-runtime Local LLM Manager SDK & CLI."""
 
-from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
-from loomcast.adapters.runtimes.ollama import OllamaRuntime
-from loomcast.common.config import LoomcastConfig
-from loomcast.common.exceptions import (
+from adapters.runtimes.lmstudio import LMStudioRuntime
+from adapters.runtimes.ollama import OllamaRuntime
+from common.config import LoomcastConfig
+from common.exceptions import (
     ConfigurationError,
     LoomcastError,
     ModelNotFoundError,
     RuntimeExecutionError,
     RuntimeUnavailableError,
 )
-from loomcast.core.manager import LoomcastManager
-from loomcast.domain.entities import CatalogEntry, ChatMessage, Model, RuntimeType
-from loomcast.ports.runtime import RuntimePort
+from core.manager import LoomcastManager
+from domain.entities import CatalogEntry, ChatMessage, Model, RuntimeType
+from ports.runtime import RuntimePort
 
 __version__ = "0.1.0"
 

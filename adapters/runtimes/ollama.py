@@ -1,8 +1,8 @@
 from typing import Any, Dict, List
 import httpx
 
-from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
-from loomcast.ports.runtime import RuntimePort
+from common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
+from ports.runtime import RuntimePort
 
 
 class OllamaRuntime(RuntimePort):

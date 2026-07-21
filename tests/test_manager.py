@@ -1,7 +1,7 @@
 import pytest
-from loomcast.common.config import LoomcastConfig
-from loomcast.core.manager import LoomcastManager
-from loomcast.domain.entities import RuntimeType
+from common.config import LoomcastConfig
+from core.manager import LoomcastManager
+from domain.entities import RuntimeType
 
 
 def test_manager_initialization():

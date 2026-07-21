@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
-from loomcast.common.config import LoomcastConfig
-from loomcast.domain.entities import RuntimeType
+from common.config import LoomcastConfig
+from domain.entities import RuntimeType
 
 
 @pytest.fixture

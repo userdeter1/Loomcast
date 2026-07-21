@@ -11,9 +11,9 @@ else:
 import tomli_w  # type: ignore
 from pydantic import BaseModel, Field
 
-from loomcast.common.exceptions import ConfigurationError
-from loomcast.common.paths import get_config_file_path
-from loomcast.domain.entities import RuntimeType
+from common.exceptions import ConfigurationError
+from common.paths import get_config_file_path
+from domain.entities import RuntimeType
 
 
 class LoomcastConfig(BaseModel):
