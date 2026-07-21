@@ -2,7 +2,7 @@ import httpx
 import pytest
 from adapters.runtimes.lmstudio import LMStudioRuntime
 from adapters.runtimes.ollama import OllamaRuntime
-from common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
+from common.exceptions import RuntimeUnavailableError
 from ports.runtime import RuntimePort
 
 

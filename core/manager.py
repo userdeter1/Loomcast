@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 from adapters.runtimes.lmstudio import LMStudioRuntime
 from adapters.runtimes.ollama import OllamaRuntime
 from common.config import LoomcastConfig
-from common.exceptions import LoomcastError, RuntimeUnavailableError
+from common.exceptions import LoomcastError
 from domain.entities import RuntimeType
 from ports.runtime import RuntimePort
 

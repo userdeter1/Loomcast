@@ -1,5 +1,4 @@
 from pathlib import Path
-import pytest
 from common.config import LoomcastConfig
 from common.paths import get_config_dir, get_config_file_path
 from domain.entities import RuntimeType

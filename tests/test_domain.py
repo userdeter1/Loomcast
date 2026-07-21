@@ -1,4 +1,3 @@
-import pytest
 from domain.entities import CatalogEntry, ChatMessage, Model, RuntimeType
 
 
