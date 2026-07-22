@@ -1,39 +1,30 @@
+# Python bytecode / caches
 __pycache__/
+*.pyc
 *.py[cod]
 *$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
 .pytest_cache/
-.coverage
-htmlcov/
-.nox/
-.tox/
+.ruff_cache/
 
-.venv
-env/
+# Build and Distribution
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+downloads/
+wheels/
+sdist/
+
+# Environments
+.venv/
 venv/
+env/
 ENV/
-env.bak/
-venv.bak/
 
+# IDE / System
 .idea/
+.vscode/
 *.swp
 *.swo
+.DS_Store

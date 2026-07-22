@@ -1,0 +1,72 @@
+[
+  {
+    "name": "llama3",
+    "description": "Meta's state-of-the-art open source large language model for general purpose reasoning and conversation.",
+    "publisher": "meta",
+    "tags": ["general", "chat", "reasoning"],
+    "default_runtime": "ollama"
+  },
+  {
+    "name": "mistral",
+    "description": "Mistral AI's 7B model offering strong performance across benchmarks.",
+    "publisher": "mistralai",
+    "tags": ["general", "chat", "fast"],
+    "default_runtime": "ollama"
+  },
+  {
+    "name": "codellama",
+    "description": "Code Llama is a code generation model built on top of Llama 2.",
+    "publisher": "meta",
+    "tags": ["code", "coding", "python", "javascript"],
+    "default_runtime": "ollama"
+  },
+  {
+    "name": "qwen2.5",
+    "description": "Alibaba's Qwen2.5 series of powerful LLMs for multilingual and coding tasks.",
+    "publisher": "alibaba",
+    "tags": ["general", "multilingual", "code"],
+    "default_runtime": "lmstudio"
+  },
+  {
+    "name": "phi3",
+    "description": "Microsoft's highly capable lightweight open model optimized for quality and speed.",
+    "publisher": "microsoft",
+    "tags": ["small", "efficient", "chat"],
+    "default_runtime": "ollama"
+  },
+  {
+    "name": "gemma2",
+    "description": "Google's lightweight, state-of-the-art open models built from Gemini technology.",
+    "publisher": "google",
+    "tags": ["general", "reasoning", "google"],
+    "default_runtime": "lmstudio"
+  },
+  {
+    "name": "deepseek-coder",
+    "description": "DeepSeek Coder is an open-source code language model trained on code and natural language.",
+    "publisher": "deepseek",
+    "tags": ["code", "coding", "math"],
+    "default_runtime": "ollama"
+  },
+  {
+    "name": "starcoder2",
+    "description": "BigCode community model trained on 80+ programming languages for code completion.",
+    "publisher": "bigcode",
+    "tags": ["code", "completion"],
+    "default_runtime": "lmstudio"
+  },
+  {
+    "name": "nomic-embed-text",
+    "description": "A high-performing long context embedding model.",
+    "publisher": "nomic",
+    "tags": ["embeddings", "vector"],
+    "default_runtime": "ollama"
+  },
+  {
+    "name": "llama3.2",
+    "description": "Meta's Llama 3.2 lightweight text and vision models.",
+    "publisher": "meta",
+    "tags": ["vision", "multimodal", "general"],
+    "default_runtime": "ollama"
+  }
+]

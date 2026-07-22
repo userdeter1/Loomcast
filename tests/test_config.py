@@ -1,7 +1,7 @@
 from pathlib import Path
-from common.config import LoomcastConfig
-from common.paths import get_config_dir, get_config_file_path
-from domain.entities import RuntimeType
+from loomcast.common.config import LoomcastConfig
+from loomcast.common.paths import get_config_dir, get_config_file_path
+from loomcast.domain.entities import RuntimeType
 
 
 def test_config_defaults():
