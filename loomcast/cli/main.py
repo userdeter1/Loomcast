@@ -4,6 +4,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from loomcast.adapters.downloader.progress import RichProgressReporter
 from loomcast.common.config import LoomcastConfig
 from loomcast.common.exceptions import LoomcastError
 from loomcast.core.manager import LoomcastManager
@@ -41,7 +42,14 @@ def status_cmd():
     default_backend = manager.config.default_backend
 
     for rtype, is_online in statuses.items():
-        endpoint = manager.config.ollama_url if rtype == RuntimeType.OLLAMA else manager.config.lmstudio_url
+        if rtype == RuntimeType.OLLAMA:
+            endpoint = manager.config.ollama_url
+        elif rtype == RuntimeType.LMSTUDIO:
+            endpoint = manager.config.lmstudio_url
+        elif rtype == RuntimeType.LLAMACPP:
+            endpoint = manager.config.llamacpp_url
+        else:
+            endpoint = "-"
         is_default = "[bold cyan]Yes[/bold cyan]" if rtype == default_backend else "No"
         status_str = "[bold green]Online[/bold green]" if is_online else "[bold red]Offline[/bold red]"
         table.add_row(rtype.value.upper(), endpoint, is_default, status_str)
@@ -96,7 +104,8 @@ def install_cmd(
     manager = get_manager()
     try:
         console.print(f"Installing model '[bold cyan]{model}[/bold cyan]'...")
-        manager.install(model, runtime_type=backend)
+        with RichProgressReporter(console=console) as progress:
+            manager.install(model, runtime_type=backend, progress=progress)
         console.print(f"[bold green]Successfully installed model '[cyan]{model}[/cyan]'![/bold green]")
     except LoomcastError as e:
         console.print(f"[bold red]Installation failed:[/bold red] {e}")
@@ -210,13 +219,22 @@ def recommend_cmd(
 @app.command("install-category")
 def install_category_cmd(
     category: str = typer.Argument(..., help="Category tag to batch install"),
-    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"),
+    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"),
+    max_concurrent: int = typer.Option(3, "--max-concurrent", "-c", help="Maximum concurrent model downloads"),
+    sequential: bool = typer.Option(False, "--sequential", "-s", help="Run model installations sequentially (max_concurrent=1)"),
 ):
     """Batch install all models in a specific category."""
     manager = get_manager()
+    effective_concurrent = 1 if sequential else max_concurrent
     try:
-        console.print(f"Batch installing category '[bold cyan]{category}[/bold cyan]'...")
-        installed, failed = manager.install_category(category, runtime_type=backend)
+        console.print(f"Batch installing category '[bold cyan]{category}[/bold cyan]' (max concurrent: {effective_concurrent})...")
+        with RichProgressReporter(console=console) as progress:
+            installed, failed = manager.install_category(
+                category,
+                runtime_type=backend,
+                max_concurrent=effective_concurrent,
+                progress=progress,
+            )
 
         console.print("[bold green]Category installation complete![/bold green]")
         console.print(f"Successfully installed: [cyan]{len(installed)}[/cyan] model(s) ({', '.join(installed) if installed else 'None'})")

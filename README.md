@@ -1,6 +1,10 @@
 # Loomcast
 
-Python SDK and CLI for seamlessly managing local LLM runtimes (**Ollama** and **LM Studio**).
+[![CI Status](https://img.shields.io/github/actions/workflow/status/<owner>/<repo>/ci.yml?branch=main&label=CI)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org)
+
+Python SDK and CLI for seamlessly managing local LLM runtimes (**Ollama**, **LM Studio**, and **llama.cpp**).
 
 ## Installation
 
@@ -62,3 +66,14 @@ print(response)
 verification = loomcast.verify("llama3", runtime_type="ollama")
 print(f"Verified: {verification.verified}, Digest: {verification.digest}")
 ```
+
+## Documentation
+
+Detailed documentation guides are available in the [`docs/`](docs/) directory:
+
+- [Prise en main (Getting Started)](docs/getting-started.md)
+- [Configuration](docs/configuration.md)
+- [Runtimes Supportés](docs/runtimes.md)
+- [Extension & Architecture](docs/extending.md)
+- [Référence CLI](docs/cli-reference.md)
+

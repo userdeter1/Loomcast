@@ -1,6 +1,8 @@
+import json
 from typing import Any, Dict, List, Optional
 import httpx
 
+from loomcast.adapters.downloader.progress import ProgressReporter
 from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
 from loomcast.ports.runtime import RuntimePort
 
@@ -46,7 +48,6 @@ class OllamaRuntime(RuntimePort):
                 return m.get("digest")
         return None
 
-
     def is_model_installed(self, model: str) -> bool:
         """Check if a model is installed in Ollama."""
         installed = self.list_installed()
@@ -57,19 +58,42 @@ class OllamaRuntime(RuntimePort):
             return True
         return False
 
-    def install(self, model: str) -> None:
+    def install(self, model: str, progress: Optional[ProgressReporter] = None) -> None:
         """Pull a model via Ollama API."""
         if not self.is_available():
             raise RuntimeUnavailableError("ollama", self.base_url)
-        try:
-            response = httpx.post(
-                f"{self.base_url}/api/pull",
-                json={"name": model, "stream": False},
-                timeout=None,  # Pulling models can take time
-            )
-            response.raise_for_status()
-        except httpx.HTTPError as e:
-            raise RuntimeExecutionError(f"Failed to install Ollama model '{model}': {e}") from e
+
+        if progress is not None:
+            try:
+                with httpx.stream(
+                    "POST",
+                    f"{self.base_url}/api/pull",
+                    json={"name": model, "stream": True},
+                    timeout=None,
+                ) as response:
+                    response.raise_for_status()
+                    for line in response.iter_lines():
+                        if not line or not line.strip():
+                            continue
+                        data = json.loads(line)
+                        status = data.get("status", "")
+                        completed = data.get("completed")
+                        total = data.get("total")
+                        progress.on_progress(status, completed, total)
+            except httpx.HTTPError as e:
+                raise RuntimeExecutionError(f"Failed to install Ollama model '{model}': {e}") from e
+            except json.JSONDecodeError as e:
+                raise RuntimeExecutionError(f"Invalid JSON response during model pull: {e}") from e
+        else:
+            try:
+                response = httpx.post(
+                    f"{self.base_url}/api/pull",
+                    json={"name": model, "stream": False},
+                    timeout=None,  # Pulling models can take time
+                )
+                response.raise_for_status()
+            except httpx.HTTPError as e:
+                raise RuntimeExecutionError(f"Failed to install Ollama model '{model}': {e}") from e
 
     def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
         """Send chat messages to Ollama native API."""

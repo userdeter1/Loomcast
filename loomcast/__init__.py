@@ -1,5 +1,10 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from loomcast.adapters.downloader.progress import (
+    NullProgressReporter,
+    ProgressReporter,
+    RichProgressReporter,
+)
 from loomcast.common.config import LoomcastConfig
 from loomcast.common.exceptions import (
     CacheError,
@@ -9,6 +14,7 @@ from loomcast.common.exceptions import (
     RuntimeExecutionError,
     RuntimeUnavailableError,
 )
+from loomcast.adapters.runtimes import LlamaCppRuntime
 from loomcast.core.manager import LoomcastManager
 from loomcast.domain.entities import CatalogEntry, ChatMessage, Model, RuntimeType, VerificationResult
 
@@ -39,9 +45,17 @@ def recommend(task: str) -> List[CatalogEntry]:
 def install_category(
     category: str,
     runtime_type: Optional[Union[RuntimeType, str]] = None,
+    max_concurrent: int = 3,
+    progress: Optional[ProgressReporter] = None,
 ) -> Tuple[List[str], List[str]]:
     """Batch install all models in a category."""
-    return get_manager().install_category(category, runtime_type=runtime_type)
+    reporter = progress if progress is not None else NullProgressReporter()
+    return get_manager().install_category(
+        category,
+        runtime_type=runtime_type,
+        max_concurrent=max_concurrent,
+        progress=reporter,
+    )
 
 
 def verify(
@@ -64,9 +78,11 @@ def chat(
 def install(
     model: str,
     runtime_type: Optional[Union[RuntimeType, str]] = None,
+    progress: Optional[ProgressReporter] = None,
 ) -> None:
     """Install a model into the local runtime."""
-    get_manager().install(model, runtime_type=runtime_type)
+    reporter = progress if progress is not None else NullProgressReporter()
+    get_manager().install(model, runtime_type=runtime_type, progress=reporter)
 
 
 def list_installed(
@@ -95,6 +111,10 @@ __all__ = [
     "install",
     "list_installed",
     "is_model_installed",
+    "ProgressReporter",
+    "RichProgressReporter",
+    "NullProgressReporter",
+    "LlamaCppRuntime",
     "LoomcastConfig",
     "LoomcastError",
     "RuntimeUnavailableError",

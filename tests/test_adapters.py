@@ -1,8 +1,9 @@
 import httpx
 import pytest
+from loomcast.adapters.runtimes.llamacpp import LlamaCppRuntime
 from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
 from loomcast.adapters.runtimes.ollama import OllamaRuntime
-from loomcast.common.exceptions import RuntimeUnavailableError
+from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
 from loomcast.ports.runtime import RuntimePort
 
 
@@ -105,3 +106,64 @@ def test_runtime_unavailable_exception(monkeypatch):
     assert runtime.is_available() is False
     with pytest.raises(RuntimeUnavailableError):
         runtime.list_installed()
+
+
+def test_llamacpp_runtime_protocol_instance():
+    runtime = LlamaCppRuntime()
+    assert isinstance(runtime, RuntimePort)
+
+
+def test_llamacpp_is_available_and_models(monkeypatch):
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok"})
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "llama-2-7b.Q4_K_M.gguf"}]})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = LlamaCppRuntime(base_url="http://localhost:8080")
+
+    monkeypatch.setattr("httpx.get", client.get)
+    assert runtime.is_available() is True
+    assert runtime.list_installed() == ["llama-2-7b.Q4_K_M.gguf"]
+    assert runtime.is_model_installed("llama-2-7b.Q4_K_M.gguf") is True
+    assert runtime.is_model_installed("nonexistent") is False
+
+
+def test_llamacpp_chat_success(monkeypatch):
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok"})
+        if request.url.path == "/v1/chat/completions":
+            return httpx.Response(200, json={"choices": [{"message": {"content": "Hello from llama.cpp!"}}]})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = LlamaCppRuntime(base_url="http://localhost:8080")
+
+    monkeypatch.setattr("httpx.get", client.get)
+    monkeypatch.setattr("httpx.post", client.post)
+
+    response = runtime.chat("llama-2-7b.Q4_K_M.gguf", [{"role": "user", "content": "Hi"}])
+    assert response == "Hello from llama.cpp!"
+
+
+def test_llamacpp_install_raises_explanatory_error(monkeypatch):
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/health":
+            return httpx.Response(200, json={"status": "ok"})
+        if request.url.path == "/v1/models":
+            return httpx.Response(200, json={"data": [{"id": "loaded-model"}]})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = LlamaCppRuntime(base_url="http://localhost:8080")
+
+    monkeypatch.setattr("httpx.get", client.get)
+
+    with pytest.raises(RuntimeExecutionError) as exc_info:
+        runtime.install("unloaded-model")
+
+    assert "llama-server" in str(exc_info.value)
+

@@ -1,0 +1,1 @@
+include loomcast/adapters/catalog/data/*.json

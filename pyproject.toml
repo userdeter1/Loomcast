@@ -4,15 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loomcast"
-version = "0.1.0"
-description = "Python SDK and CLI for seamlessly managing local LLM runtimes (Ollama, LM Studio)"
+version = "0.1.1"
+description = "Python SDK and CLI for seamlessly managing local LLM runtimes (Ollama, LM Studio, llama.cpp)"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
     { name = "Loomcast Contributors" }
 ]
-keywords = ["llm", "ollama", "lmstudio", "ai", "sdk", "cli", "local-ai"]
+keywords = ["llm", "ollama", "lmstudio", "llamacpp", "ai", "sdk", "cli", "local-ai"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -39,16 +39,28 @@ dev = [
     "pytest>=7.0.0",
     "pytest-mock>=3.10.0",
     "ruff>=0.1.0",
+    "build>=1.0.0",
 ]
 
 [project.scripts]
 loomcast = "loomcast.cli.main:app"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["loomcast*"]
+
+[tool.setuptools.package-data]
+loomcast = ["adapters/catalog/data/*.json"]
 
 [tool.pytest.ini_options]
 pythonpath = "."
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+markers = [
+    "integration: tests requiring a real local runtime server (deselected by default)"
+]
+addopts = "-m 'not integration'"
+

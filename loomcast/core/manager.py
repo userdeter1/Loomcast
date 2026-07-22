@@ -1,8 +1,11 @@
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from loomcast.adapters.cache.store import FileSystemCache
 from loomcast.adapters.catalog.dynamic import DynamicCatalog
 from loomcast.adapters.catalog.static import StaticCatalog
+from loomcast.adapters.downloader.progress import ProgressReporter
+from loomcast.adapters.runtimes.llamacpp import LlamaCppRuntime
 from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
 from loomcast.adapters.runtimes.ollama import OllamaRuntime
 from loomcast.common.config import LoomcastConfig
@@ -26,6 +29,7 @@ class LoomcastManager:
         self.runtimes: Dict[RuntimeType, RuntimePort] = {
             RuntimeType.OLLAMA: OllamaRuntime(base_url=self.config.ollama_url),
             RuntimeType.LMSTUDIO: LMStudioRuntime(base_url=self.config.lmstudio_url),
+            RuntimeType.LLAMACPP: LlamaCppRuntime(base_url=self.config.llamacpp_url),
         }
         self.catalog: CatalogPort = catalog if catalog is not None else DynamicCatalog(
             cache=FileSystemCache(),
@@ -64,10 +68,18 @@ class LoomcastManager:
         adapter = self.get_runtime(runtime_type)
         return adapter.is_model_installed(model)
 
-    def install(self, model: str, runtime_type: Optional[Union[RuntimeType, str]] = None) -> None:
+    def install(
+        self,
+        model: str,
+        runtime_type: Optional[Union[RuntimeType, str]] = None,
+        progress: Optional[ProgressReporter] = None,
+    ) -> None:
         """Install a model into the specified or default runtime."""
         adapter = self.get_runtime(runtime_type)
-        adapter.install(model)
+        if progress is not None:
+            adapter.install(model, progress=progress)
+        else:
+            adapter.install(model)
 
     def chat(
         self,
@@ -107,24 +119,48 @@ class LoomcastManager:
         self,
         category: str,
         runtime_type: Optional[Union[RuntimeType, str]] = None,
+        max_concurrent: int = 3,
+        progress: Optional[ProgressReporter] = None,
     ) -> Tuple[List[str], List[str]]:
         """
         Batch install all models tagged under a given category.
 
+        Args:
+            category: Category tag to query recommendations.
+            runtime_type: Target runtime backend override.
+            max_concurrent: Maximum concurrent installations (defaults to 3).
+            progress: Optional progress reporter for download feedback.
+
         Returns:
             Tuple[List[str], List[str]]: A tuple containing (installed_models, failed_models).
-            Does not stop on individual installation failures, but logs errors.
+            Does not stop on individual installation failures, but tracks futures individually.
         """
         entries = self.recommend(category)
+        if not entries:
+            return [], []
+
         installed: List[str] = []
         failed: List[str] = []
 
-        for entry in entries:
-            try:
-                self.install(entry.name, runtime_type=runtime_type)
-                installed.append(entry.name)
-            except Exception as e:
-                logger.warning(f"Failed to install model '{entry.name}' in category '{category}': {e}")
-                failed.append(entry.name)
+        def _install_single(entry: CatalogEntry) -> str:
+            item_progress = progress.create_sub_reporter(entry.name) if progress is not None else None
+            self.install(entry.name, runtime_type=runtime_type, progress=item_progress)
+            return entry.name
+
+        effective_workers = max(1, max_concurrent)
+        with ThreadPoolExecutor(max_workers=effective_workers) as executor:
+            future_to_entry = {
+                executor.submit(_install_single, entry): entry
+                for entry in entries
+            }
+
+            for future in as_completed(future_to_entry):
+                entry = future_to_entry[future]
+                try:
+                    name = future.result()
+                    installed.append(name)
+                except Exception as e:
+                    logger.warning(f"Failed to install model '{entry.name}' in category '{category}': {e}")
+                    failed.append(entry.name)
 
         return installed, failed

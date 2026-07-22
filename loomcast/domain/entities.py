@@ -7,6 +7,7 @@ class RuntimeType(str, Enum):
     """Supported local LLM runtime backends."""
     OLLAMA = "ollama"
     LMSTUDIO = "lmstudio"
+    LLAMACPP = "llamacpp"
 
 
 class Model(BaseModel):

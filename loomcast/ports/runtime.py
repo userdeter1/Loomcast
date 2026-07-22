@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 if sys.version_info >= (3, 8):
     from typing import Protocol, runtime_checkable
@@ -19,7 +19,7 @@ class RuntimePort(Protocol):
         """Check if a specific model is installed/loaded in this runtime."""
         ...
 
-    def install(self, model: str) -> None:
+    def install(self, model: str, progress: Optional[Any] = None) -> None:
         """Install or pull a model into the local runtime."""
         ...
 

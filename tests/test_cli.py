@@ -9,10 +9,10 @@ runner = CliRunner()
 
 def test_cli_status(monkeypatch: pytest.MonkeyPatch):
     class MockManager:
-        config = type("Config", (), {"default_backend": RuntimeType.OLLAMA, "ollama_url": "http://localhost:11434", "lmstudio_url": "http://localhost:1234"})()
+        config = type("Config", (), {"default_backend": RuntimeType.OLLAMA, "ollama_url": "http://localhost:11434", "lmstudio_url": "http://localhost:1234", "llamacpp_url": "http://localhost:8080"})()
 
         def list_available_runtimes(self):
-            return {RuntimeType.OLLAMA: True, RuntimeType.LMSTUDIO: False}
+            return {RuntimeType.OLLAMA: True, RuntimeType.LMSTUDIO: False, RuntimeType.LLAMACPP: False}
 
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
     result = runner.invoke(app, ["status"])
@@ -79,7 +79,7 @@ def test_cli_recommend(monkeypatch: pytest.MonkeyPatch):
 
 def test_cli_install_category(monkeypatch: pytest.MonkeyPatch):
     class MockManager:
-        def install_category(self, category, runtime_type=None):
+        def install_category(self, category, runtime_type=None, **kwargs):
             return (["codellama"], ["deepseek-coder"])
 
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
@@ -88,6 +88,20 @@ def test_cli_install_category(monkeypatch: pytest.MonkeyPatch):
     assert "Category installation complete!" in result.output
     assert "codellama" in result.output
     assert "deepseek-coder" in result.output
+
+
+def test_cli_install_category_sequential(monkeypatch: pytest.MonkeyPatch):
+    passed_args = {}
+
+    class MockManager:
+        def install_category(self, category, runtime_type=None, max_concurrent=3, progress=None):
+            passed_args["max_concurrent"] = max_concurrent
+            return (["codellama"], [])
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["install-category", "code", "--sequential"])
+    assert result.exit_code == 0
+    assert passed_args["max_concurrent"] == 1
 
 
 def test_cli_verify(monkeypatch: pytest.MonkeyPatch):

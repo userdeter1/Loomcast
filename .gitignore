@@ -21,6 +21,8 @@ sdist/
 venv/
 env/
 ENV/
+.env
+
 
 # IDE / System
 .idea/

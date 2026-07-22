@@ -1,6 +1,8 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import httpx
 
+from loomcast.adapters.downloader.progress import ProgressReporter
+from loomcast.adapters.runtimes._openai_compat import send_openai_compat_chat
 from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
 from loomcast.ports.runtime import RuntimePort
 
@@ -38,8 +40,14 @@ class LMStudioRuntime(RuntimePort):
         installed = self.list_installed()
         return model in installed
 
-    def install(self, model: str) -> None:
-        """LM Studio model installation directive."""
+    def install(self, model: str, progress: Optional[ProgressReporter] = None) -> None:
+        """LM Studio model installation directive.
+
+        Note:
+            LM Studio does not support remote model downloading via API.
+            The `progress` parameter is accepted to respect the RuntimePort interface,
+            but is ignored here.
+        """
         if not self.is_available():
             raise RuntimeUnavailableError("lmstudio", self.base_url)
         # LM Studio model pulling is typically handled in the LM Studio application UI.
@@ -54,22 +62,10 @@ class LMStudioRuntime(RuntimePort):
         """Send chat completion request to LM Studio OpenAI-compatible endpoint."""
         if not self.is_available():
             raise RuntimeUnavailableError("lmstudio", self.base_url)
-        try:
-            payload = {
-                "model": model,
-                "messages": messages,
-                "stream": False,
-            }
-            response = httpx.post(
-                f"{self.base_url}/v1/chat/completions",
-                json=payload,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            data = response.json()
-            choices = data.get("choices", [])
-            if not choices:
-                raise RuntimeExecutionError("Empty choices returned from LM Studio chat API.")
-            return choices[0].get("message", {}).get("content", "")
-        except httpx.HTTPError as e:
-            raise RuntimeExecutionError(f"LM Studio chat execution failed for model '{model}': {e}") from e
+        return send_openai_compat_chat(
+            base_url=self.base_url,
+            model=model,
+            messages=messages,
+            timeout=self.timeout,
+            runtime_name="LM Studio",
+        )

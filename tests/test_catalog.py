@@ -66,3 +66,25 @@ def test_static_catalog_invalid_json_validation(tmp_path: Path):
     # Case 2: File not found
     with pytest.raises(LoomcastError):
         StaticCatalog(catalog_path=tmp_path / "non_existent.json")
+
+
+def test_catalog_json_included_in_package_resources():
+    """
+    REGRESSION TEST (Bug fixed in version 0.1.1):
+    In version 0.1.0 published on PyPI, `adapters/catalog/data/catalog.json` was missing from
+    the built wheel and sdist distributions because `include-package-data = true`,
+    `[tool.setuptools.package-data]`, and `MANIFEST.in` were missing from packaging configs.
+    This rendered almost all loomcast commands unusable after a standard `pip install`.
+
+    DO NOT DELETE THIS TEST: This test ensures that `catalog.json` is registered and accessible
+    as a Python package resource via `importlib.resources`, guaranteeing it will be bundled
+    and accessible when installed from PyPI.
+    """
+    import importlib.resources
+
+    try:
+        catalog_resource = importlib.resources.files("loomcast.adapters.catalog").joinpath("data", "catalog.json")
+        assert catalog_resource.is_file(), "catalog.json missing from package resources"
+    except AttributeError:
+        assert importlib.resources.is_resource("loomcast.adapters.catalog.data", "catalog.json")
+
