@@ -1,4 +1,4 @@
-from domain.entities import CatalogEntry, ChatMessage, Model, RuntimeType
+from loomcast.domain.entities import CatalogEntry, ChatMessage, Model, RuntimeType
 
 
 def test_runtime_type_enum():

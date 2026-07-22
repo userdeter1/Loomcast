@@ -42,10 +42,11 @@ dev = [
 ]
 
 [project.scripts]
-loomcast = "cli.main:app"
+loomcast = "loomcast.cli.main:app"
 
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["loomcast*"]
 
 [tool.pytest.ini_options]
 pythonpath = "."

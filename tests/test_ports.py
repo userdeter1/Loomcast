@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
-from ports.cache import CachePort
-from ports.catalog import CatalogPort
-from ports.runtime import RuntimePort
+from loomcast.ports.cache import CachePort
+from loomcast.ports.catalog import CatalogPort
+from loomcast.ports.runtime import RuntimePort
 
 
 class DummyRuntimeAdapter:
