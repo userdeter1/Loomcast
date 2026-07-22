@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -54,6 +55,9 @@ jobs:
     name: Publish to Production PyPI
     if: github.event_name == 'workflow_dispatch' && inputs.publish_to_pypi == true
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
       - name: Checkout code
