@@ -1,10 +1,24 @@
 name: CI
 
 on:
+  # Every branch, not just main. Restricting push to main meant a commit landing
+  # on a branch with no open pull request was never validated at all -- and once
+  # a pull request is merged, later pushes to that same branch fall into exactly
+  # that gap.
   push:
-    branches: [ main ]
+    branches: [ '**' ]
+  # Kept so pull requests opened from forks are covered: a fork's push does not
+  # trigger workflows in this repository.
   pull_request:
     branches: [ main ]
+
+# Supersede stale runs of the same event on the same branch. Scoped by
+# event_name on purpose: a same-repo pull request fires both `push` and
+# `pull_request`, and they must not cancel each other, or the pull request would
+# display a cancelled check.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   test:
