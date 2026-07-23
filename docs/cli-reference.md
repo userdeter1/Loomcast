@@ -1,12 +1,14 @@
-# Référence CLI de Loomcast
+# Loomcast CLI reference
 
-Loomcast fournit une interface en ligne de commande (CLI) bâtie avec [Typer](https://typer.tiangolo.com/) et [Rich](https://rich.readthedocs.io/).
+Loomcast ships a command-line interface built with
+[Typer](https://typer.tiangolo.com/) and [Rich](https://rich.readthedocs.io/).
 
-Toutes les commandes sont accessibles via l'exécutable `loomcast` (ou `python -m loomcast.cli.main`).
+Every command is available through the `loomcast` executable (or
+`python -m loomcast.cli.main`).
 
 ---
 
-## Vue d'ensemble des commandes
+## Command overview
 
 ```bash
 loomcast [COMMAND] [ARGS] [OPTIONS]
@@ -16,14 +18,16 @@ loomcast [COMMAND] [ARGS] [OPTIONS]
 
 ## 1. `loomcast status`
 
-Affiche l'état d'opération (en ligne / hors ligne), l'URL d'endpoint et le runtime par défaut pour tous les backends configurés (**Ollama**, **LM Studio**, **llama.cpp**).
+Shows the operational state (online / offline), the endpoint URL, and the
+default runtime for every configured backend (**Ollama**, **LM Studio**,
+**llama.cpp**).
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast status
 ```
 
-### Exemple de sortie
+### Sample output
 ```
 ┌──────────┬────────────────────────┬─────────┬────────┐
 │ Runtime  │ Endpoint               │ Default │ Status │
@@ -38,22 +42,23 @@ loomcast status
 
 ## 2. `loomcast list`
 
-Liste l'ensemble des modèles installés et disponibles sur les runtimes locaux.
+Lists every model installed and available across the local runtimes.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast list [OPTIONS]
 ```
 
 ### Options
-- `-b, --backend TEXT` : Filtrer par runtime spécifique (`ollama`, `lmstudio`, `llamacpp`).
+- `-b, --backend TEXT`: filter by a specific runtime (`ollama`, `lmstudio`,
+  `llamacpp`).
 
-### Exemples
+### Examples
 ```bash
-# Lister les modèles sur tous les runtimes
+# List models across every runtime
 loomcast list
 
-# Lister uniquement les modèles Ollama
+# List Ollama models only
 loomcast list --backend ollama
 ```
 
@@ -61,20 +66,23 @@ loomcast list --backend ollama
 
 ## 3. `loomcast install`
 
-Télécharge et installe un modèle dans le runtime cible (pour les runtimes supportant l'installation à chaud via API comme Ollama).
+Downloads and installs a model into the target runtime (for runtimes that
+support hot installation through an API, such as Ollama).
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast install MODEL [OPTIONS]
 ```
 
 ### Arguments
-- `MODEL` (Requis) : Identifiant du modèle à installer (ex: `qwen2.5:0.5b`, `llama3`).
+- `MODEL` (required): identifier of the model to install (e.g. `qwen2.5:0.5b`,
+  `llama3`).
 
 ### Options
-- `-b, --backend TEXT` : Backend cible (`ollama` ou `lmstudio`). Si non spécifié, utilise le backend par défaut.
+- `-b, --backend TEXT`: target backend (`ollama`, `lmstudio`, `llamacpp`).
+  Defaults to the configured default backend.
 
-### Exemple
+### Example
 ```bash
 loomcast install qwen2.5:0.5b --backend ollama
 ```
@@ -83,49 +91,55 @@ loomcast install qwen2.5:0.5b --backend ollama
 
 ## 4. `loomcast remove`
 
-Supprime un modèle installé du runtime cible (par exemple via l'API `DELETE /api/delete` d'Ollama). Demande une confirmation interactive avant la suppression, sauf si l'option `--yes` est utilisée.
+Removes an installed model from the target runtime (for example through Ollama's
+`DELETE /api/delete` API). Prompts for interactive confirmation before deleting,
+unless `--yes` is passed.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast remove MODEL [OPTIONS]
 ```
 
 ### Arguments
-- `MODEL` (Requis) : Identifiant du modèle à supprimer (ex: `qwen2.5:0.5b`, `llama3`).
+- `MODEL` (required): identifier of the model to remove (e.g. `qwen2.5:0.5b`,
+  `llama3`).
 
 ### Options
-- `-b, --backend TEXT` : Backend cible (`ollama`, `lmstudio`, `llamacpp`). Si non spécifié, utilise le backend par défaut.
-- `-y, --yes` : Sauter la demande de confirmation interactive (utile en script).
+- `-b, --backend TEXT`: target backend (`ollama`, `lmstudio`, `llamacpp`).
+  Defaults to the configured default backend.
+- `-y, --yes`: skip the interactive confirmation prompt (useful in scripts).
 
-### Exemples
+### Examples
 ```bash
-# Suppression interactive
+# Interactive removal
 loomcast remove qwen2.5:0.5b
 
-# Suppression sans confirmation avec backend spécifié
+# Removal without confirmation, on an explicit backend
 loomcast remove llama3 --backend ollama --yes
 ```
 
 ---
 
----
-
 ## 5. `loomcast update`
 
-Met à jour un modèle déjà installé sur le runtime cible (par exemple en ré-effectuant un pull sur Ollama et en comparant le digest SHA256). Affiche un message différent selon si le modèle a été mis à jour ou s'il était déjà à la dernière version.
+Updates a model already installed on the target runtime (for example by
+re-pulling on Ollama and comparing the SHA-256 digest). The message differs
+depending on whether the model was updated or was already up to date.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast update MODEL [OPTIONS]
 ```
 
 ### Arguments
-- `MODEL` (Requis) : Identifiant du modèle à mettre à jour (ex: `qwen2.5:0.5b`, `llama3`).
+- `MODEL` (required): identifier of the model to update (e.g. `qwen2.5:0.5b`,
+  `llama3`).
 
 ### Options
-- `-b, --backend TEXT` : Backend cible (`ollama`, `lmstudio`, `llamacpp`). Si non spécifié, utilise le backend par défaut.
+- `-b, --backend TEXT`: target backend (`ollama`, `lmstudio`, `llamacpp`).
+  Defaults to the configured default backend.
 
-### Exemple
+### Example
 ```bash
 loomcast update qwen2.5:0.5b --backend ollama
 ```
@@ -134,52 +148,55 @@ loomcast update qwen2.5:0.5b --backend ollama
 
 ## 6. `loomcast chat`
 
-Envoie une invite (prompt) à un modèle LLM local et affiche sa réponse dans un panneau mis en forme.
+Sends a prompt to a local LLM and displays its response in a formatted panel.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast chat MODEL PROMPT [OPTIONS]
 ```
 
-> **Attention** : L'argument `MODEL` doit être spécifié en **premier**, suivi du texte du `PROMPT`.
+> **Careful**: the `MODEL` argument comes **first**, followed by the `PROMPT`
+> text.
 
 ### Arguments
-- `MODEL` (Requis) : Le nom du modèle chargé.
-- `PROMPT` (Requis) : Le texte de la question / requête.
+- `MODEL` (required): name of the loaded model.
+- `PROMPT` (required): the question or request text.
 
 ### Options
-- `-b, --backend TEXT` : Backend cible (`ollama`, `lmstudio`, `llamacpp`).
+- `-b, --backend TEXT`: target backend (`ollama`, `lmstudio`, `llamacpp`).
 
-### Exemples
+### Examples
 ```bash
-# Chat avec le backend par défaut
-loomcast chat qwen2.5:0.5b "Explique la récursion en 2 phrases."
+# Chat on the default backend
+loomcast chat qwen2.5:0.5b "Explain recursion in two sentences."
 
-# Chat avec un modèle sur LM Studio
-loomcast chat qwen2.5-coder-7b "Écris un script bash pour lister les fichiers." -b lmstudio
+# Chat with a model on LM Studio
+loomcast chat qwen2.5-coder-7b "Write a bash script that lists files." -b lmstudio
 ```
 
 ---
 
 ## 7. `loomcast config`
 
-Consulte ou met à jour la configuration persistance de Loomcast (`config.toml`).
+Views or updates Loomcast's persistent configuration (`config.toml`).
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast config [OPTIONS]
 ```
 
 ### Options
-- `--set-default TEXT` : Mettre à jour le backend par défaut (`ollama`, `lmstudio`, `llamacpp`).
-- `--show / --no-show` : Afficher ou masquer la table de configuration actuelle (par défaut: `--show`).
+- `--set-default TEXT`: set the default backend (`ollama`, `lmstudio`,
+  `llamacpp`).
+- `--show / --no-show`: show or hide the current configuration table (default:
+  `--show`).
 
-### Exemples
+### Examples
 ```bash
-# Afficher la configuration actuelle
+# Show the current configuration
 loomcast config
 
-# Définir LM Studio comme backend par défaut
+# Set LM Studio as the default backend
 loomcast config --set-default lmstudio
 ```
 
@@ -187,17 +204,17 @@ loomcast config --set-default lmstudio
 
 ## 8. `loomcast search`
 
-Recherche des modèles dans le catalogue d'indexation Loomcast.
+Searches for models in the Loomcast index catalog.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast search QUERY
 ```
 
 ### Arguments
-- `QUERY` (Requis) : Mot-clé de recherche (ex: `code`, `llama`, `vision`).
+- `QUERY` (required): search keyword (e.g. `code`, `llama`, `vision`).
 
-### Exemple
+### Example
 ```bash
 loomcast search code
 ```
@@ -206,17 +223,18 @@ loomcast search code
 
 ## 9. `loomcast recommend`
 
-Recherche et recommande des modèles adaptés à une tâche ou une étiquette (tag) spécifique.
+Finds and recommends models suited to a specific task or tag.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast recommend TASK
 ```
 
 ### Arguments
-- `TASK` (Requis) : Étiquette ou catégorie de tâche (ex: `coding`, `math`, `translation`).
+- `TASK` (required): task tag or category (e.g. `coding`, `math`,
+  `translation`).
 
-### Exemple
+### Example
 ```bash
 loomcast recommend coding
 ```
@@ -225,22 +243,23 @@ loomcast recommend coding
 
 ## 10. `loomcast install-category`
 
-Installe simultanément en lot tous les modèles associés à une catégorie ou un tag donné.
+Batch-installs every model associated with a given category or tag.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast install-category CATEGORY [OPTIONS]
 ```
 
 ### Arguments
-- `CATEGORY` (Requis) : Nom du tag/catégorie à installer.
+- `CATEGORY` (required): name of the tag/category to install.
 
 ### Options
-- `-b, --backend TEXT` : Backend cible.
-- `-c, --max-concurrent INTEGER` : Nombre maximal de téléchargements parallèles (défaut : 3).
-- `-s, --sequential` : Exécuter l'installation de manière séquentielle (`max-concurrent=1`).
+- `-b, --backend TEXT`: target backend.
+- `-c, --max-concurrent INTEGER`: maximum number of parallel downloads
+  (default: 3).
+- `-s, --sequential`: run the installation sequentially (`max-concurrent=1`).
 
-### Exemple
+### Example
 ```bash
 loomcast install-category coding --backend ollama --max-concurrent 2
 ```
@@ -249,20 +268,20 @@ loomcast install-category coding --backend ollama --max-concurrent 2
 
 ## 11. `loomcast verify`
 
-Vérifie l'intégrité cryptographique (digest SHA256) d'un modèle installé.
+Verifies the cryptographic integrity (SHA-256 digest) of an installed model.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast verify MODEL [OPTIONS]
 ```
 
 ### Arguments
-- `MODEL` (Requis) : Nom du modèle à vérifier.
+- `MODEL` (required): name of the model to verify.
 
 ### Options
-- `-b, --backend TEXT` : Backend sur lequel vérifier le modèle.
+- `-b, --backend TEXT`: backend on which to verify the model.
 
-### Exemple
+### Example
 ```bash
 loomcast verify qwen2.5:0.5b --backend ollama
 ```
@@ -271,19 +290,34 @@ loomcast verify qwen2.5:0.5b --backend ollama
 
 ## 12. `loomcast doctor`
 
-Exécute un diagnostic complet de l'environnement Loomcast (configuration TOML, variables d'environnement, disponibilité des runtimes locaux, accessibilité du catalogue et intégrité SHA-256 du catalogue statique).
+Runs a full diagnostic of the Loomcast environment: TOML configuration,
+environment variables, local runtime availability, catalog reachability, and
+SHA-256 integrity of the static catalog.
 
-### Syntaxe
+### Syntax
 ```bash
 loomcast doctor
 ```
 
-### Statuts et Codes de sortie
-- `✓ OK` : Le point de contrôle a réussi.
-- `⚠ Avertissement` : Problème non bloquant (ex: runtime optionnel hors ligne ou basculement du catalogue dynamique vers le catalogue statique). Code de sortie `0` si ce sont les seuls signalements.
-- `✗ Problème` : Problème critique bloquant (ex: backend par défaut hors ligne, erreur de configuration, catalogue statique altéré). Code de sortie `1`.
+### Statuses and exit codes
+- `✓ OK`: the check passed.
+- `⚠ Warning`: non-blocking issue (e.g. an optional runtime offline, or the
+  dynamic catalog falling back to the static one). Exit code `0` if these are
+  the only findings.
+- `✗ Problem`: blocking issue (e.g. the default backend offline, a
+  configuration error, or a tampered static catalog). Exit code `1`.
 
-### Exemple
-```bash
-loomcast doctor
+### Sample output
+```
+Loomcast System Diagnostics
+
+✓ Configuration: loaded successfully from /home/user/.config/loomcast/config.toml
+✓ Environment variables: none set, using defaults
+✗ Runtime OLLAMA (default backend): unavailable. Start the service or change the default backend in the config.
+⚠ Runtime LMSTUDIO: unavailable (not the default backend)
+⚠ Runtime LLAMACPP: unavailable (not the default backend)
+✓ Catalog: dynamic catalog reachable
+✓ Static catalog integrity: SHA-256 check passed
+
+1 problem(s) found, 2 warning(s)
 ```

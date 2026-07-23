@@ -1,15 +1,15 @@
 ## Description
 
-<!-- Description courte du changement -->
+<!-- Short description of the change -->
 
-## Issue correspondante
+## Related issue
 
-<!-- Lien vers l'issue correspondante (ex: Closes #4) -->
+<!-- Link to the related issue (e.g. Closes #4) -->
 
 ## Checklist
 
-- [ ] Tests ajoutés ou mis à jour
-- [ ] `pytest` passe en local
-- [ ] `ruff check .` ne remonte rien
-- [ ] Aucune régression sur les tests existants
-- [ ] README mis à jour si une commande CLI ou le SDK a changé
+- [ ] Tests added or updated
+- [ ] `pytest` passes locally
+- [ ] `ruff check .` reports nothing
+- [ ] No regression in existing tests
+- [ ] README updated if a CLI command or the SDK changed

@@ -1,90 +1,99 @@
-# Runtimes Supportés et Gestion des Backends
+# Supported runtimes and backend management
 
-Loomcast intègre une couche d'abstraction permettant de gérer de manière unifiée plusieurs serveurs d'exécution LLM locaux (runtimes).
+Loomcast provides an abstraction layer that lets you drive several local LLM
+runtime servers through a single, unified interface.
 
 ---
 
-## 1. Tableau Comparatif des Runtimes Supportés
+## 1. Runtime comparison
 
-| Caractéristique | Ollama | LM Studio | llama.cpp (`llama-server`) |
+| Capability | Ollama | LM Studio | llama.cpp (`llama-server`) |
 | :--- | :--- | :--- | :--- |
-| **Backend Enum** | `ollama` | `lmstudio` | `llamacpp` |
-| **Port par défaut** | `11434` | `1234` | `8080` |
-| **Protocole API** | API native REST (`/api/chat`, `/api/pull`, `/api/tags`) | API OpenAI-compatible (`/v1/chat/completions`, `/v1/models`) | API OpenAI-compatible (`/v1/chat/completions`, `/v1/models`, `/health`) |
-| **Installation de modèles** | **Automatique** via API (`POST /api/pull`) | **Manuelle** dans l'application LM Studio | **Manuelle** au démarrage du serveur (`llama-server -m`) |
-| **Vérification d'intégrité** | **Disponible** (via digest SHA256 renvoyé par l'API Ollama) | **Non disponible** (l'API `/v1/models` n'expose pas de digests) | **Non disponible** (API REST ne fournit pas de digests) |
-| **Modèles simultanés** | Plusieurs modèles gérés par l'instance | Selon les capacités configurées dans l'application | **Un seul modèle** chargé à la fois par instance de `llama-server` |
+| **Backend enum** | `ollama` | `lmstudio` | `llamacpp` |
+| **Default port** | `11434` | `1234` | `8080` |
+| **API protocol** | Native REST API (`/api/chat`, `/api/pull`, `/api/tags`) | OpenAI-compatible API (`/v1/chat/completions`, `/v1/models`) | OpenAI-compatible API (`/v1/chat/completions`, `/v1/models`, `/health`) |
+| **Model installation** | **Automatic** through the API (`POST /api/pull`) | **Manual**, inside the LM Studio application | **Manual**, at server startup (`llama-server -m`) |
+| **Integrity verification** | **Available** (SHA-256 digest returned by the Ollama API) | **Unavailable** (`/v1/models` exposes no digests) | **Unavailable** (the REST API provides no digests) |
+| **Concurrent models** | Several models managed per instance | Depends on what the application is configured for | **One model** loaded at a time per `llama-server` instance |
 
 ---
 
-## 2. Limitations Connues par Runtime
+## 2. Known limitations per runtime
 
 ### Ollama (`ollama`)
-- **Points forts** : Support natif du téléchargement de modèles avec suivi de progression en temps réel, vérification complète de l'intégrité via SHA256 digest (`loomcast verify`).
+- **Strengths**: native support for model downloads with real-time progress
+  reporting, and full integrity verification through the SHA-256 digest
+  (`loomcast verify`).
 
 ### LM Studio (`lmstudio`)
-- **Installation** : LM Studio n'expose pas d'endpoint HTTP public pour télécharger des modèles à distance via API. Les modèles doivent être préalablement recherchés et chargés dans l'interface graphique de LM Studio.
-- **Vérification** : La commande `loomcast verify` renvoie un statut non vérifié car l'API OpenAI-compatible de LM Studio n'inclut pas de signatures cryptographiques.
+- **Installation**: LM Studio exposes no public HTTP endpoint for downloading
+  models remotely through an API. Models must be searched for and loaded
+  beforehand in the LM Studio GUI.
+- **Verification**: `loomcast verify` reports an unverified status, because the
+  LM Studio OpenAI-compatible API includes no cryptographic signatures.
 
 ### llama.cpp (`llamacpp`)
-- **Modèle unique** : Une instance de `llama-server` est lancée pour servir **un modèle unique** spécifié lors du démarrage de l'exécutable (`-m /path/to/model.gguf`).
-- **Installation API** : Pas de téléchargement à chaud via l'API REST. Tenter d'installer un modèle non chargé retournera un message d'erreur invitant à relancer le serveur avec le modèle désiré.
+- **Single model**: a `llama-server` instance serves **exactly one model**,
+  chosen when the executable starts (`-m /path/to/model.gguf`).
+- **API installation**: there is no hot download through the REST API. Trying to
+  install a model that is not loaded returns an error message telling you to
+  restart the server with the model you want.
 
 ---
 
-## 3. Basculer d'un Runtime à l'Autre
+## 3. Switching between runtimes
 
-Loomcast permet de basculer facilement d'un backend à un autre via 3 mécanismes distincts.
+Loomcast lets you switch backends through three distinct mechanisms.
 
-### A. Via le Flag CLI (`--backend` / `-b`)
-Pour surcharger ponctuellement le runtime d'une commande CLI :
+### A. With the CLI flag (`--backend` / `-b`)
+To override the runtime for a single CLI command:
 
 ```bash
-# Vérifier les modèles chargés dans LM Studio
+# Check which models are loaded in LM Studio
 loomcast list --backend lmstudio
 
-# Télécharger un modèle dans Ollama
+# Download a model into Ollama
 loomcast install qwen2.5:0.5b -b ollama
 
-# Discuter avec un modèle servi par llama-server
-loomcast chat gemma-2-2b "Expose le principe de la Clean Architecture." --backend llamacpp
+# Chat with a model served by llama-server
+loomcast chat gemma-2-2b "Explain the principles of Clean Architecture." --backend llamacpp
 ```
 
-### B. Via le SDK Python (`runtime_type`)
-Dans vos scripts Python, passez le paramètre `runtime_type` :
+### B. From the Python SDK (`runtime_type`)
+In your Python scripts, pass the `runtime_type` parameter:
 
 ```python
 import loomcast
 
-# Requête vers LM Studio
+# Request against LM Studio
 response_lms = loomcast.chat(
     model="qwen2.5-coder-7b",
     messages=[{"role": "user", "content": "Hello!"}],
     runtime_type="lmstudio",
 )
 
-# Obtenir directement l'adaptateur de runtime
+# Get the runtime adapter directly
 manager = loomcast.get_manager()
 llamacpp_adapter = manager.get_runtime("llamacpp")
 
 if llamacpp_adapter.is_available():
-    print("llama-server est actif sur le port 8080!")
+    print("llama-server is running on port 8080!")
 ```
 
-### C. Via la Configuration Globale (`default_backend`)
-Pour modifier le backend par défaut de manière permanente :
+### C. Through global configuration (`default_backend`)
+To change the default backend permanently:
 
-#### En CLI
+#### From the CLI
 ```bash
 loomcast config --set-default lmstudio
 ```
 
-#### Dans le fichier `config.toml`
+#### In `config.toml`
 ```toml
 default_backend = "lmstudio"
 ```
 
-#### Via variable d'environnement (temporaire ou dans la session shell)
+#### Through an environment variable (temporary, or for the shell session)
 ```bash
 export LOOMCAST_DEFAULT_BACKEND="llamacpp"
 ```

@@ -34,6 +34,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - User-facing output in `doctor`, `update`, `remove`, and `verify` is now in
   English, matching the rest of the CLI.
+- The whole project is now in English: `CONTRIBUTING.md`, all five `docs/`
+  guides, the pull request template, the integration test comments, and the
+  Gitleaks config were translated from French.
+- `--backend` and `--set-default` help text now lists `llamacpp`, which was
+  supported but undocumented.
+- `docs/extending.md` documented a `RuntimePort` missing `remove()` and
+  `update()`; it now matches the actual protocol.
 - Ruff is pinned to 0.16.0 and the lint rule set is declared explicitly via
   `select`. Previously only `ignore` was set, so ruff fell back to its built-in
   defaults, which changed between releases and broke CI.

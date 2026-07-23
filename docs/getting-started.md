@@ -1,122 +1,130 @@
-# Prise en main de Loomcast
+# Getting started with Loomcast
 
-Ce guide vous accompagne pour installer et commencer à utiliser **Loomcast**, un gestionnaire d'apprentissage et d'orchestration pour rênes d'exécution de LLMs locaux (**Ollama**, **LM Studio** et **llama.cpp**).
+This guide walks you through installing and getting started with **Loomcast**, a
+manager and orchestration layer for local LLM runtimes (**Ollama**, **LM Studio**
+and **llama.cpp**).
 
 ---
 
 ## 1. Installation
 
-### En mode utilisateur standard
-Pour installer Loomcast dans votre environnement Python :
+### Standard user install
+To install Loomcast into your Python environment:
 
 ```bash
 pip install .
 ```
 
-### En mode développement
-Si vous souhaitez contribuer au projet ou modifier le code source :
+### Development install
+If you want to contribute to the project or modify the source:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
-Cette commande installe le package Loomcast en mode éditable avec les dépendances de développement (`pytest`, `ruff`, `httpx`, `tomli-w`, etc.).
+This installs the Loomcast package in editable mode with the development
+dependencies (`pytest`, `ruff`, `httpx`, `tomli-w`, and so on).
 
 ---
 
-## 2. Prérequis : Démarrer un Runtime Local
+## 2. Prerequisite: start a local runtime
 
-Avant d'exécuter des requêtes de chat ou d'interagir avec les modèles, **au moins un serveur LLM local** doit être lancé et accessible sur votre machine.
+Before running chat requests or interacting with models, **at least one local LLM
+server** must be running and reachable on your machine.
 
-Loomcast supporte les trois runtimes suivants avec leurs ports par défaut :
+Loomcast supports the following three runtimes, with their default ports:
 
-- **Ollama** : `http://localhost:11434` (Lancez l'application Ollama ou `ollama serve`).
-- **LM Studio** : `http://localhost:1234` (Lancez l'application LM Studio et activez le serveur OpenAI-compatible).
-- **llama.cpp** (`llama-server`) : `http://localhost:8080` (Exécutez `llama-server -m /chemin/vers/modèle.gguf`).
-
----
-
-## 3. Premier Chat en CLI
-
-Une fois le serveur local prêt, vous pouvez interagir directement depuis votre terminal avec la commande `loomcast chat`.
-
-### Syntaxe CLI
-```bash
-loomcast chat <MODELE> <PROMPT> [--backend <BACKEND>]
-```
-
-> **Remarque** : Le premier argument est le **nom du modèle**, et le second est votre **prompt**.
-
-### Exemples CLI
-
-Interroger un modèle sur le backend par défaut (Ollama) :
-```bash
-loomcast chat qwen2.5:0.5b "Bonjour, présente-toi brièvement."
-```
-
-Spécifier explicitement le backend LM Studio :
-```bash
-loomcast chat qwen2.5-coder-7b-instruct "Écris une fonction Python qui calcule la suite de Fibonacci." --backend lmstudio
-```
+- **Ollama**: `http://localhost:11434` (start the Ollama app, or `ollama serve`).
+- **LM Studio**: `http://localhost:1234` (start the LM Studio app and enable the
+  OpenAI-compatible server).
+- **llama.cpp** (`llama-server`): `http://localhost:8080` (run
+  `llama-server -m /path/to/model.gguf`).
 
 ---
 
-## 4. Premier Chat avec le SDK Python
+## 3. Your first chat from the CLI
 
-Vous pouvez également intégrer Loomcast dans vos scripts Python via son SDK.
+Once the local server is ready, you can interact with it straight from your
+terminal using `loomcast chat`.
 
-### Exemple complet et testé
+### CLI syntax
+```bash
+loomcast chat <MODEL> <PROMPT> [--backend <BACKEND>]
+```
+
+> **Note**: the first argument is the **model name**, the second is your
+> **prompt**.
+
+### CLI examples
+
+Query a model on the default backend (Ollama):
+```bash
+loomcast chat qwen2.5:0.5b "Hello, introduce yourself briefly."
+```
+
+Target the LM Studio backend explicitly:
+```bash
+loomcast chat qwen2.5-coder-7b-instruct "Write a Python function that computes the Fibonacci sequence." --backend lmstudio
+```
+
+---
+
+## 4. Your first chat with the Python SDK
+
+You can also integrate Loomcast into your Python scripts through its SDK.
+
+### Complete, tested example
 
 ```python
 import loomcast
 
-# 1. Rechercher des modèles compatibles dans le catalogue
+# 1. Search the catalog for compatible models
 results = loomcast.search("qwen")
-print(f"Modèles trouvés dans le catalogue : {len(results)}")
+print(f"Models found in the catalog: {len(results)}")
 for entry in results[:3]:
     print(f"- {entry.name}: {entry.description}")
 
-# 2. Vérifier les modèles installés sur le backend par défaut (Ollama)
+# 2. Check which models are installed on the default backend (Ollama)
 installed_models = loomcast.list_installed()
-print(f"Modèles installés en local : {installed_models}")
+print(f"Locally installed models: {installed_models}")
 
-# 3. Envoyer un prompt de chat via le SDK
+# 3. Send a chat prompt through the SDK
 messages = [
-    {"role": "system", "content": "Tu me réponds brièvement."},
-    {"role": "user", "content": "Quelle est la capitale de la France ?"},
+    {"role": "system", "content": "Answer briefly."},
+    {"role": "user", "content": "What is the capital of France?"},
 ]
 
-# Appel de la fonction chat du SDK
+# Call the SDK chat function
 response = loomcast.chat(
     model="qwen2.5:0.5b",
     messages=messages,
-    runtime_type="ollama",  # Optionnel: 'ollama', 'lmstudio', ou 'llamacpp'
+    runtime_type="ollama",  # Optional: 'ollama', 'lmstudio', or 'llamacpp'
 )
 
-print("\n--- Réponse du modèle ---")
+print("\n--- Model response ---")
 print(response)
 ```
 
-### Utilisation explicite avec `LoomcastManager`
+### Explicit usage with `LoomcastManager`
 
-Pour un contrôle plus fin sur la configuration ou l'injection de dépendances :
+For finer control over configuration or dependency injection:
 
 ```python
 from loomcast import LoomcastConfig, LoomcastManager
 
-# Charger la configuration personnalisée
+# Load a custom configuration
 config = LoomcastConfig(default_backend="ollama", ollama_url="http://localhost:11434")
 manager = LoomcastManager(config=config)
 
-# Vérifier le statut de tous les runtimes locaux
+# Check the status of every local runtime
 status = manager.list_available_runtimes()
 for runtime, is_online in status.items():
-    print(f"Runtime {runtime.value}: {'En ligne' if is_online else 'Hors ligne'}")
+    print(f"Runtime {runtime.value}: {'Online' if is_online else 'Offline'}")
 
-# Exécuter une requête de chat
+# Run a chat request
 response = manager.chat(
     model="qwen2.5:0.5b",
-    messages=[{"role": "user", "content": "Explique ce qu'est un LLM en 2 phrases."}],
+    messages=[{"role": "user", "content": "Explain what an LLM is in two sentences."}],
 )
 print(response)
 ```

@@ -72,7 +72,7 @@ def status_cmd():
 @app.command("list")
 def list_cmd(
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """List installed models in local runtimes."""
@@ -108,7 +108,7 @@ def list_cmd(
         console.print(table)
     except ValueError:
         console.print(
-            f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama' or 'lmstudio'."
+            f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama', 'lmstudio' or 'llamacpp'."
         )
         raise typer.Exit(code=1)
 
@@ -117,7 +117,7 @@ def list_cmd(
 def install_cmd(
     model: str = typer.Argument(..., help="Model identifier to install/pull"),
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """Install or pull a model into the target runtime."""
@@ -187,7 +187,7 @@ def chat_cmd(
     model: str = typer.Argument(..., help="Model name to chat with"),
     prompt: str = typer.Argument(..., help="User prompt string"),
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """Send a single prompt to a model and display the response."""
@@ -208,7 +208,7 @@ def chat_cmd(
 @app.command("config")
 def config_cmd(
     set_default_backend: Optional[str] = typer.Option(
-        None, "--set-default", help="Set default backend (ollama | lmstudio)"
+        None, "--set-default", help="Set default backend (ollama | lmstudio | llamacpp)"
     ),
     show: bool = typer.Option(
         True, "--show/--no-show", help="Display current configuration"
@@ -356,7 +356,7 @@ def install_category_cmd(
 def verify_cmd(
     model: str = typer.Argument(..., help="Model name to verify"),
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """Verify integrity of an installed model."""
