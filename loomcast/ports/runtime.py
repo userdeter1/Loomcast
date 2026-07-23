@@ -30,3 +30,11 @@ class RuntimePort(Protocol):
     def list_installed(self) -> List[str]:
         """List all installed/available model names in this runtime."""
         ...
+
+    def remove(self, model: str) -> None:
+        """Remove or delete an installed model from the local runtime."""
+        ...
+
+    def update(self, model: str, progress: Optional[Any] = None) -> bool:
+        """Update an installed model in the local runtime and return True if digest changed."""
+        ...

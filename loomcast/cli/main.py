@@ -1,14 +1,19 @@
+import os
 from typing import Optional
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from loomcast.adapters.catalog.dynamic import DynamicCatalog
+from loomcast.adapters.catalog.static import StaticCatalog
 from loomcast.adapters.downloader.progress import RichProgressReporter
 from loomcast.common.config import LoomcastConfig
-from loomcast.common.exceptions import LoomcastError
+from loomcast.common.exceptions import CatalogIntegrityError, LoomcastError
+from loomcast.common.paths import get_config_file_path
 from loomcast.core.manager import LoomcastManager
 from loomcast.domain.entities import RuntimeType
+
 
 app = typer.Typer(
     name="loomcast",
@@ -123,6 +128,55 @@ def install_cmd(
         )
     except LoomcastError as e:
         console.print(f"[bold red]Installation failed:[/bold red] {e}")
+        raise typer.Exit(code=1)
+
+
+@app.command("update")
+def update_cmd(
+    model: str = typer.Argument(..., help="Model identifier to update"),
+    backend: Optional[str] = typer.Option(
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
+    ),
+):
+    """Update an installed model in the target runtime."""
+    manager = get_manager()
+    try:
+        console.print(f"Updating model '[bold cyan]{model}[/bold cyan]'...")
+        with RichProgressReporter(console=console) as progress:
+            updated = manager.update(model, runtime_type=backend, progress=progress)
+        if updated:
+            console.print(
+                f"[bold green]Modèle mis à jour avec succès '[cyan]{model}[/cyan]'![/bold green]"
+            )
+        else:
+            console.print(
+                f"[yellow]Déjà à la dernière version, rien à faire pour '[cyan]{model}[/cyan]'.[/yellow]"
+            )
+    except LoomcastError as e:
+        console.print(f"[bold red]Update failed:[/bold red] {e}")
+        raise typer.Exit(code=1)
+
+
+@app.command("remove")
+def remove_cmd(
+    model: str = typer.Argument(..., help="Model identifier to remove/delete"),
+    backend: Optional[str] = typer.Option(
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
+):
+    """Remove an installed model from the target runtime."""
+    if not yes:
+        if not typer.confirm(f"Supprimer {model} ? Cette action est irréversible."):
+            raise typer.Abort()
+    manager = get_manager()
+    try:
+        manager.remove(model, runtime_type=backend)
+        console.print(
+            f"[bold green]Successfully removed model '[cyan]{model}[/cyan]'![/bold green]"
+        )
+    except LoomcastError as e:
+        console.print(f"[bold red]Removal failed:[/bold red] {e}")
         raise typer.Exit(code=1)
 
 
@@ -324,6 +378,128 @@ def verify_cmd(
         console.print(table)
     except LoomcastError as e:
         console.print(f"[bold red]Verification error:[/bold red] {e}")
+        raise typer.Exit(code=1)
+
+
+@app.command("doctor")
+def doctor_cmd():
+    """Run system diagnostics across configuration, runtimes, catalog, and integrity."""
+    problems = 0
+    warnings = 0
+
+    console.print("[bold cyan]Loomcast System Diagnostics[/bold cyan]\n")
+
+    # 1. Configuration loading
+    config_path = get_config_file_path()
+    try:
+        LoomcastConfig.load()
+        console.print(
+            f"[bold green]✓[/bold green] Configuration : Chargée avec succès depuis [cyan]{config_path}[/cyan]"
+        )
+    except Exception as e:
+        problems += 1
+        console.print(
+            f"[bold red]✗[/bold red] Configuration : Échec du chargement ({e})"
+        )
+
+    # 2. Environment variables
+    env_keys = [
+        "LOOMCAST_DEFAULT_BACKEND",
+        "LOOMCAST_OLLAMA_URL",
+        "LOOMCAST_LMSTUDIO_URL",
+        "LOOMCAST_LLAMACPP_URL",
+        "LOOMCAST_CATALOG_SOURCE",
+    ]
+    active_env = [f"{k}={os.environ[k]}" for k in env_keys if k in os.environ]
+    if active_env:
+        console.print(
+            f"[bold green]✓[/bold green] Variables d'environnement actives : {', '.join(active_env)}"
+        )
+    else:
+        console.print(
+            "[bold green]✓[/bold green] Variables d'environnement : Aucune variable Loomcast spécifique définie (valeurs par défaut)"
+        )
+
+    # 3. Runtime availability
+    manager = get_manager()
+    default_backend = manager.config.default_backend
+    statuses = manager.list_available_runtimes()
+
+    for rtype, is_online in statuses.items():
+        name = rtype.value.upper()
+        if is_online:
+            console.print(f"[bold green]✓[/bold green] Runtime {name} : Disponible")
+        else:
+            if rtype == default_backend:
+                problems += 1
+                console.print(
+                    f"[bold red]✗[/bold red] Runtime {name} (Backend par défaut) : Indisponible. Lancez le service ou modifiez le backend par défaut dans la config."
+                )
+            else:
+                warnings += 1
+                console.print(
+                    f"[bold yellow]⚠[/bold yellow] Runtime {name} : Indisponible (non configuré comme backend par défaut)"
+                )
+
+    # 4. Catalog accessibility
+    catalog = manager.catalog
+    if isinstance(catalog, DynamicCatalog):
+        entries, is_fallback = catalog._get_entries()
+        if is_fallback:
+            try:
+                fb_entries = catalog.fallback_catalog.search("")
+                if fb_entries:
+                    warnings += 1
+                    console.print(
+                        "[bold yellow]⚠[/bold yellow] Catalogue : Catalogue dynamique indisponible (basculement sur le catalogue statique)"
+                    )
+                else:
+                    problems += 1
+                    console.print(
+                        "[bold red]✗[/bold red] Catalogue : Catalogue dynamique et catalogue statique de secours sont indisponibles"
+                    )
+            except Exception as e:
+                problems += 1
+                console.print(
+                    f"[bold red]✗[/bold red] Catalogue : Échec du catalogue statique de secours ({e})"
+                )
+        else:
+            console.print(
+                "[bold green]✓[/bold green] Catalogue : Catalogue dynamique accessible"
+            )
+    else:
+        try:
+            catalog.search("")
+            console.print("[bold green]✓[/bold green] Catalogue : Catalogue accessible")
+        except Exception as e:
+            problems += 1
+            console.print(
+                f"[bold red]✗[/bold red] Catalogue : Erreur d'accès au catalogue ({e})"
+            )
+
+    # 5. Embedded static catalog file integrity
+    try:
+        StaticCatalog()
+        console.print(
+            "[bold green]✓[/bold green] Intégrité du catalogue statique : Validation SHA-256 réussie"
+        )
+    except CatalogIntegrityError as e:
+        problems += 1
+        console.print(
+            f"[bold red]✗[/bold red] Intégrité du catalogue statique : Problème de checksum SHA-256 ({e})"
+        )
+    except Exception as e:
+        problems += 1
+        console.print(
+            f"[bold red]✗[/bold red] Intégrité du catalogue statique : Erreur ({e})"
+        )
+
+    # Summary
+    console.print(
+        f"\n[bold]{problems} problème(s) détecté(s), {warnings} avertissement(s)[/bold]"
+    )
+
+    if problems > 0:
         raise typer.Exit(code=1)
 
 

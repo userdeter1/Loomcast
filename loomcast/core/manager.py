@@ -92,6 +92,27 @@ class LoomcastManager:
         else:
             adapter.install(model)
 
+    def remove(
+        self,
+        model: str,
+        runtime_type: Optional[Union[RuntimeType, str]] = None,
+    ) -> None:
+        """Remove/uninstall a model from the specified or default runtime."""
+        adapter = self.get_runtime(runtime_type)
+        adapter.remove(model)
+
+    def update(
+        self,
+        model: str,
+        runtime_type: Optional[Union[RuntimeType, str]] = None,
+        progress: Optional[ProgressReporter] = None,
+    ) -> bool:
+        """Update an installed model in the specified or default runtime."""
+        adapter = self.get_runtime(runtime_type)
+        if progress is not None:
+            return adapter.update(model, progress=progress)
+        return adapter.update(model)
+
     def chat(
         self,
         model: str,

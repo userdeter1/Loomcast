@@ -69,3 +69,19 @@ class LMStudioRuntime(RuntimePort):
             timeout=self.timeout,
             runtime_name="LM Studio",
         )
+
+    def remove(self, model: str) -> None:
+        """LM Studio model removal directive."""
+        raise RuntimeExecutionError(
+            f"LM Studio does not support model deletion via API. "
+            f"Please remove '{model}' manually within the LM Studio interface."
+        )
+
+    def update(self, model: str, progress: Optional[ProgressReporter] = None) -> bool:
+        """LM Studio model update directive."""
+        if not self.is_available():
+            raise RuntimeUnavailableError("lmstudio", self.base_url)
+        raise RuntimeExecutionError(
+            "LM Studio does not support model updating via API. "
+            "Please search and load the model within the LM Studio interface."
+        )

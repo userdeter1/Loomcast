@@ -93,6 +93,24 @@ def install(
     get_manager().install(model, runtime_type=runtime_type, progress=reporter)
 
 
+def remove(
+    model: str,
+    runtime_type: Optional[Union[RuntimeType, str]] = None,
+) -> None:
+    """Remove/uninstall an installed model from the local runtime."""
+    get_manager().remove(model, runtime_type=runtime_type)
+
+
+def update(
+    model: str,
+    runtime_type: Optional[Union[RuntimeType, str]] = None,
+    progress: Optional[ProgressReporter] = None,
+) -> bool:
+    """Update an installed model in the local runtime."""
+    reporter = progress if progress is not None else NullProgressReporter()
+    return get_manager().update(model, runtime_type=runtime_type, progress=reporter)
+
+
 def list_installed(
     runtime_type: Optional[Union[RuntimeType, str]] = None,
 ) -> List[str]:
@@ -117,6 +135,8 @@ __all__ = [
     "verify",
     "chat",
     "install",
+    "remove",
+    "update",
     "list_installed",
     "is_model_installed",
     "ProgressReporter",

@@ -27,6 +27,13 @@ class DummyRuntimeAdapter:
     def list_installed(self) -> List[str]:
         return list(self._installed)
 
+    def remove(self, model: str) -> None:
+        if model in self._installed:
+            self._installed.remove(model)
+
+    def update(self, model: str, progress: Any = None) -> bool:
+        return False
+
 
 def test_runtime_port_protocol_compliance():
     adapter = DummyRuntimeAdapter()
@@ -37,10 +44,12 @@ def test_runtime_port_protocol_compliance():
 
     adapter.install("phi3:latest")
     assert adapter.is_model_installed("phi3:latest") is True
+    adapter.remove("phi3:latest")
+    assert adapter.is_model_installed("phi3:latest") is False
 
     response = adapter.chat("llama3:latest", [{"role": "user", "content": "Hi"}])
     assert response == "Response to Hi from llama3:latest"
-    assert "phi3:latest" in adapter.list_installed()
+    assert "phi3:latest" not in adapter.list_installed()
 
 
 def test_protocol_runtime_check():

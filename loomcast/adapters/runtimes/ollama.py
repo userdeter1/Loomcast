@@ -3,7 +3,11 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from loomcast.adapters.downloader.progress import ProgressReporter
-from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
+from loomcast.common.exceptions import (
+    ModelNotFoundError,
+    RuntimeExecutionError,
+    RuntimeUnavailableError,
+)
 from loomcast.ports.runtime import RuntimePort
 
 
@@ -125,3 +129,38 @@ class OllamaRuntime(RuntimePort):
             raise RuntimeExecutionError(
                 f"Ollama chat execution failed for model '{model}': {e}"
             ) from e
+
+    def remove(self, model: str) -> None:
+        """Remove/delete an installed model via Ollama API."""
+        if not self.is_available():
+            raise RuntimeUnavailableError("ollama", self.base_url)
+
+        if not self.is_model_installed(model):
+            raise ModelNotFoundError(model, "ollama")
+
+        try:
+            response = httpx.request(
+                "DELETE",
+                f"{self.base_url}/api/delete",
+                json={"name": model},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+        except httpx.HTTPError as e:
+            raise RuntimeExecutionError(
+                f"Failed to remove Ollama model '{model}': {e}"
+            ) from e
+
+    def update(self, model: str, progress: Optional[ProgressReporter] = None) -> bool:
+        """Update an installed Ollama model and return True if digest changed."""
+        if not self.is_available():
+            raise RuntimeUnavailableError("ollama", self.base_url)
+
+        if not self.is_model_installed(model):
+            raise ModelNotFoundError(model, "ollama")
+
+        initial_digest = self.get_model_digest(model)
+        self.install(model, progress=progress)
+        new_digest = self.get_model_digest(model)
+
+        return initial_digest != new_digest

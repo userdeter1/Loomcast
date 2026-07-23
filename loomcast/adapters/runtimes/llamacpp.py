@@ -71,3 +71,19 @@ class LlamaCppRuntime(RuntimePort):
             timeout=self.timeout,
             runtime_name="llama.cpp",
         )
+
+    def remove(self, model: str) -> None:
+        """llama.cpp model removal directive."""
+        raise RuntimeExecutionError(
+            "llama-server serves a single model specified at launch and does not support model deletion via API. "
+            "To change models, stop the llama-server process and restart it with a different model."
+        )
+
+    def update(self, model: str, progress: Optional[ProgressReporter] = None) -> bool:
+        """llama.cpp model update directive."""
+        if not self.is_available():
+            raise RuntimeUnavailableError("llamacpp", self.base_url)
+        raise RuntimeExecutionError(
+            "llama-server serves a single model specified at launch and does not support model updating via API. "
+            "Please launch llama-server with your desired model specified via command-line flags."
+        )

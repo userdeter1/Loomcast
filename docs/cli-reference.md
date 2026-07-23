@@ -81,7 +81,58 @@ loomcast install qwen2.5:0.5b --backend ollama
 
 ---
 
-## 4. `loomcast chat`
+## 4. `loomcast remove`
+
+Supprime un modèle installé du runtime cible (par exemple via l'API `DELETE /api/delete` d'Ollama). Demande une confirmation interactive avant la suppression, sauf si l'option `--yes` est utilisée.
+
+### Syntaxe
+```bash
+loomcast remove MODEL [OPTIONS]
+```
+
+### Arguments
+- `MODEL` (Requis) : Identifiant du modèle à supprimer (ex: `qwen2.5:0.5b`, `llama3`).
+
+### Options
+- `-b, --backend TEXT` : Backend cible (`ollama`, `lmstudio`, `llamacpp`). Si non spécifié, utilise le backend par défaut.
+- `-y, --yes` : Sauter la demande de confirmation interactive (utile en script).
+
+### Exemples
+```bash
+# Suppression interactive
+loomcast remove qwen2.5:0.5b
+
+# Suppression sans confirmation avec backend spécifié
+loomcast remove llama3 --backend ollama --yes
+```
+
+---
+
+---
+
+## 5. `loomcast update`
+
+Met à jour un modèle déjà installé sur le runtime cible (par exemple en ré-effectuant un pull sur Ollama et en comparant le digest SHA256). Affiche un message différent selon si le modèle a été mis à jour ou s'il était déjà à la dernière version.
+
+### Syntaxe
+```bash
+loomcast update MODEL [OPTIONS]
+```
+
+### Arguments
+- `MODEL` (Requis) : Identifiant du modèle à mettre à jour (ex: `qwen2.5:0.5b`, `llama3`).
+
+### Options
+- `-b, --backend TEXT` : Backend cible (`ollama`, `lmstudio`, `llamacpp`). Si non spécifié, utilise le backend par défaut.
+
+### Exemple
+```bash
+loomcast update qwen2.5:0.5b --backend ollama
+```
+
+---
+
+## 6. `loomcast chat`
 
 Envoie une invite (prompt) à un modèle LLM local et affiche sa réponse dans un panneau mis en forme.
 
@@ -110,7 +161,7 @@ loomcast chat qwen2.5-coder-7b "Écris un script bash pour lister les fichiers."
 
 ---
 
-## 5. `loomcast config`
+## 7. `loomcast config`
 
 Consulte ou met à jour la configuration persistance de Loomcast (`config.toml`).
 
@@ -134,7 +185,7 @@ loomcast config --set-default lmstudio
 
 ---
 
-## 6. `loomcast search`
+## 8. `loomcast search`
 
 Recherche des modèles dans le catalogue d'indexation Loomcast.
 
@@ -153,7 +204,7 @@ loomcast search code
 
 ---
 
-## 7. `loomcast recommend`
+## 9. `loomcast recommend`
 
 Recherche et recommande des modèles adaptés à une tâche ou une étiquette (tag) spécifique.
 
@@ -172,7 +223,7 @@ loomcast recommend coding
 
 ---
 
-## 8. `loomcast install-category`
+## 10. `loomcast install-category`
 
 Installe simultanément en lot tous les modèles associés à une catégorie ou un tag donné.
 
@@ -196,7 +247,7 @@ loomcast install-category coding --backend ollama --max-concurrent 2
 
 ---
 
-## 9. `loomcast verify`
+## 11. `loomcast verify`
 
 Vérifie l'intégrité cryptographique (digest SHA256) d'un modèle installé.
 
@@ -214,4 +265,25 @@ loomcast verify MODEL [OPTIONS]
 ### Exemple
 ```bash
 loomcast verify qwen2.5:0.5b --backend ollama
+```
+
+---
+
+## 12. `loomcast doctor`
+
+Exécute un diagnostic complet de l'environnement Loomcast (configuration TOML, variables d'environnement, disponibilité des runtimes locaux, accessibilité du catalogue et intégrité SHA-256 du catalogue statique).
+
+### Syntaxe
+```bash
+loomcast doctor
+```
+
+### Statuts et Codes de sortie
+- `✓ OK` : Le point de contrôle a réussi.
+- `⚠ Avertissement` : Problème non bloquant (ex: runtime optionnel hors ligne ou basculement du catalogue dynamique vers le catalogue statique). Code de sortie `0` si ce sont les seuls signalements.
+- `✗ Problème` : Problème critique bloquant (ex: backend par défaut hors ligne, erreur de configuration, catalogue statique altéré). Code de sortie `1`.
+
+### Exemple
+```bash
+loomcast doctor
 ```

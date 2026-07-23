@@ -3,7 +3,11 @@ import pytest
 from loomcast.adapters.runtimes.llamacpp import LlamaCppRuntime
 from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
 from loomcast.adapters.runtimes.ollama import OllamaRuntime
-from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
+from loomcast.common.exceptions import (
+    ModelNotFoundError,
+    RuntimeExecutionError,
+    RuntimeUnavailableError,
+)
 from loomcast.ports.runtime import RuntimePort
 
 
@@ -190,4 +194,135 @@ def test_llamacpp_install_raises_explanatory_error(monkeypatch):
     with pytest.raises(RuntimeExecutionError) as exc_info:
         runtime.install("unloaded-model")
 
+    assert "llama-server" in str(exc_info.value)
+
+
+def test_ollama_remove_success(monkeypatch):
+    deleted_payload = {}
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "llama3:latest"}]})
+        if request.url.path == "/api/delete" and request.method == "DELETE":
+            import json
+
+            deleted_payload.update(json.loads(request.content.decode("utf-8")))
+            return httpx.Response(200, json={"status": "success"})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = OllamaRuntime(base_url="http://localhost:11434")
+
+    monkeypatch.setattr("httpx.get", client.get)
+    monkeypatch.setattr("httpx.request", client.request)
+
+    runtime.remove("llama3")
+    assert deleted_payload == {"name": "llama3"}
+
+
+def test_ollama_remove_model_not_found(monkeypatch):
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "llama3:latest"}]})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = OllamaRuntime(base_url="http://localhost:11434")
+
+    monkeypatch.setattr("httpx.get", client.get)
+
+    with pytest.raises(ModelNotFoundError) as exc_info:
+        runtime.remove("nonexistent")
+    assert "nonexistent" in str(exc_info.value)
+
+
+def test_lmstudio_remove_raises_explanatory_error():
+    runtime = LMStudioRuntime()
+    with pytest.raises(RuntimeExecutionError) as exc_info:
+        runtime.remove("any-model")
+    assert "LM Studio" in str(exc_info.value)
+
+
+def test_llamacpp_remove_raises_explanatory_error():
+    runtime = LlamaCppRuntime()
+    with pytest.raises(RuntimeExecutionError) as exc_info:
+        runtime.remove("any-model")
+    assert "llama-server" in str(exc_info.value)
+
+
+def test_ollama_update_digest_changed(monkeypatch):
+    pulled = False
+
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        nonlocal pulled
+        if request.url.path == "/api/tags":
+            digest = "sha256:v2" if pulled else "sha256:v1"
+            return httpx.Response(
+                200, json={"models": [{"name": "llama3:latest", "digest": digest}]}
+            )
+        if request.url.path == "/api/pull":
+            pulled = True
+            return httpx.Response(200, json={"status": "success"})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = OllamaRuntime(base_url="http://localhost:11434")
+
+    monkeypatch.setattr("httpx.get", client.get)
+    monkeypatch.setattr("httpx.post", client.post)
+
+    updated = runtime.update("llama3")
+    assert updated is True
+
+
+def test_ollama_update_digest_unchanged(monkeypatch):
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/tags":
+            return httpx.Response(
+                200,
+                json={"models": [{"name": "llama3:latest", "digest": "sha256:same"}]},
+            )
+        if request.url.path == "/api/pull":
+            return httpx.Response(200, json={"status": "success"})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = OllamaRuntime(base_url="http://localhost:11434")
+
+    monkeypatch.setattr("httpx.get", client.get)
+    monkeypatch.setattr("httpx.post", client.post)
+
+    updated = runtime.update("llama3")
+    assert updated is False
+
+
+def test_ollama_update_model_not_found(monkeypatch):
+    def mock_handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/api/tags":
+            return httpx.Response(200, json={"models": [{"name": "llama3:latest"}]})
+        return httpx.Response(404)
+
+    client = httpx.Client(transport=httpx.MockTransport(mock_handler))
+    runtime = OllamaRuntime(base_url="http://localhost:11434")
+
+    monkeypatch.setattr("httpx.get", client.get)
+
+    with pytest.raises(ModelNotFoundError) as exc_info:
+        runtime.update("nonexistent")
+    assert "nonexistent" in str(exc_info.value)
+
+
+def test_lmstudio_update_raises_explanatory_error(monkeypatch):
+    runtime = LMStudioRuntime()
+    monkeypatch.setattr(runtime, "is_available", lambda: True)
+    with pytest.raises(RuntimeExecutionError) as exc_info:
+        runtime.update("any-model")
+    assert "LM Studio" in str(exc_info.value)
+
+
+def test_llamacpp_update_raises_explanatory_error(monkeypatch):
+    runtime = LlamaCppRuntime()
+    monkeypatch.setattr(runtime, "is_available", lambda: True)
+    with pytest.raises(RuntimeExecutionError) as exc_info:
+        runtime.update("any-model")
     assert "llama-server" in str(exc_info.value)

@@ -223,3 +223,68 @@ def test_install_category_respects_max_concurrent():
     assert len(failed) == 0
     assert tracking_adapter.max_active_observed <= 2
     assert tracking_adapter.max_active_observed > 0
+
+
+def test_manager_remove_resolve_runtime():
+    removed_calls = []
+
+    class MockRuntime(RuntimePort):
+        def is_available(self) -> bool:
+            return True
+
+        def is_model_installed(self, model: str) -> bool:
+            return True
+
+        def install(self, model: str, progress: Optional[Any] = None) -> None:
+            pass
+
+        def chat(self, model: str, messages: list) -> str:
+            return ""
+
+        def list_installed(self) -> list:
+            return []
+
+        def remove(self, model: str) -> None:
+            removed_calls.append(model)
+
+    manager = LoomcastManager()
+    mock_adapter = MockRuntime()
+    manager.runtimes[RuntimeType.LMSTUDIO] = mock_adapter
+
+    manager.remove("llama3", runtime_type="lmstudio")
+    assert removed_calls == ["llama3"]
+
+
+def test_manager_update_resolve_runtime():
+    updated_calls = []
+
+    class MockRuntime(RuntimePort):
+        def is_available(self) -> bool:
+            return True
+
+        def is_model_installed(self, model: str) -> bool:
+            return True
+
+        def install(self, model: str, progress: Optional[Any] = None) -> None:
+            pass
+
+        def chat(self, model: str, messages: list) -> str:
+            return ""
+
+        def list_installed(self) -> list:
+            return []
+
+        def remove(self, model: str) -> None:
+            pass
+
+        def update(self, model: str, progress: Optional[Any] = None) -> bool:
+            updated_calls.append(model)
+            return True
+
+    manager = LoomcastManager()
+    mock_adapter = MockRuntime()
+    manager.runtimes[RuntimeType.OLLAMA] = mock_adapter
+
+    res = manager.update("llama3", runtime_type="ollama")
+    assert res is True
+    assert updated_calls == ["llama3"]
