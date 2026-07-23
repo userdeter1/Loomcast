@@ -12,7 +12,7 @@ def generate_checksum() -> Path:
     if not catalog_path.is_file():
         raise FileNotFoundError(f"Catalog file not found at '{catalog_path}'")
 
-    raw_bytes = catalog_path.read_bytes()
+    raw_bytes = catalog_path.read_bytes().replace(b"\r\n", b"\n")
     sha256_hash = hashlib.sha256(raw_bytes).hexdigest()
 
     checksum_path.write_text(f"{sha256_hash}\n", encoding="utf-8")

@@ -34,7 +34,7 @@ class StaticCatalog(CatalogPort):
             )
 
         try:
-            raw_bytes = self.catalog_path.read_bytes()
+            raw_bytes = self.catalog_path.read_bytes().replace(b"\r\n", b"\n")
             actual_hash = hashlib.sha256(raw_bytes).hexdigest()
             expected_hash = checksum_path.read_text(encoding="utf-8").strip()
         except Exception as e:
