@@ -6,8 +6,10 @@ from typing import Optional
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
+from rich.text import Text
 
 from loomcast.adapters.catalog.dynamic import DynamicCatalog
 from loomcast.adapters.catalog.static import StaticCatalog
@@ -31,7 +33,7 @@ def get_manager() -> LoomcastManager:
         config = LoomcastConfig.load()
         return LoomcastManager(config=config)
     except Exception as e:  # noqa: BLE001
-        console.print(f"[bold red]Configuration error:[/bold red] {e}")
+        console.print(f"[bold red]Configuration error:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -99,16 +101,18 @@ def list_cmd(
                         )
                     else:
                         for m in models:
-                            table.add_row(rtype.value.upper(), m)
+                            table.add_row(rtype.value.upper(), escape(m))
                 except LoomcastError as e:
-                    table.add_row(rtype.value.upper(), f"[red]Error: {e}[/red]")
+                    table.add_row(
+                        rtype.value.upper(), f"[red]Error: {escape(str(e))}[/red]"
+                    )
             else:
                 table.add_row(rtype.value.upper(), "[dim red]Runtime offline[/dim red]")
 
         console.print(table)
     except ValueError:
         console.print(
-            f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama', 'lmstudio' or 'llamacpp'."
+            f"[bold red]Invalid backend:[/bold red] '{escape(backend)}'. Choose 'ollama', 'lmstudio' or 'llamacpp'."
         )
         raise typer.Exit(code=1) from None
 
@@ -123,14 +127,14 @@ def install_cmd(
     """Install or pull a model into the target runtime."""
     manager = get_manager()
     try:
-        console.print(f"Installing model '[bold cyan]{model}[/bold cyan]'...")
+        console.print(f"Installing model '[bold cyan]{escape(model)}[/bold cyan]'...")
         with RichProgressReporter(console=console) as progress:
             manager.install(model, runtime_type=backend, progress=progress)
         console.print(
-            f"[bold green]Successfully installed model '[cyan]{model}[/cyan]'![/bold green]"
+            f"[bold green]Successfully installed model '[cyan]{escape(model)}[/cyan]'![/bold green]"
         )
     except LoomcastError as e:
-        console.print(f"[bold red]Installation failed:[/bold red] {e}")
+        console.print(f"[bold red]Installation failed:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -144,19 +148,19 @@ def update_cmd(
     """Update an installed model in the target runtime."""
     manager = get_manager()
     try:
-        console.print(f"Updating model '[bold cyan]{model}[/bold cyan]'...")
+        console.print(f"Updating model '[bold cyan]{escape(model)}[/bold cyan]'...")
         with RichProgressReporter(console=console) as progress:
             updated = manager.update(model, runtime_type=backend, progress=progress)
         if updated:
             console.print(
-                f"[bold green]Successfully updated model '[cyan]{model}[/cyan]'![/bold green]"
+                f"[bold green]Successfully updated model '[cyan]{escape(model)}[/cyan]'![/bold green]"
             )
         else:
             console.print(
-                f"[yellow]Already up to date, nothing to do for '[cyan]{model}[/cyan]'.[/yellow]"
+                f"[yellow]Already up to date, nothing to do for '[cyan]{escape(model)}[/cyan]'.[/yellow]"
             )
     except LoomcastError as e:
-        console.print(f"[bold red]Update failed:[/bold red] {e}")
+        console.print(f"[bold red]Update failed:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -169,16 +173,17 @@ def remove_cmd(
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ):
     """Remove an installed model from the target runtime."""
+    # typer.confirm writes plain text, not rich markup, so no escaping here.
     if not yes and not typer.confirm(f"Remove {model}? This action cannot be undone."):
         raise typer.Abort()
     manager = get_manager()
     try:
         manager.remove(model, runtime_type=backend)
         console.print(
-            f"[bold green]Successfully removed model '[cyan]{model}[/cyan]'![/bold green]"
+            f"[bold green]Successfully removed model '[cyan]{escape(model)}[/cyan]'![/bold green]"
         )
     except LoomcastError as e:
-        console.print(f"[bold red]Removal failed:[/bold red] {e}")
+        console.print(f"[bold red]Removal failed:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -195,13 +200,19 @@ def chat_cmd(
     try:
         messages = [{"role": "user", "content": prompt}]
         with console.status(
-            f"[bold green]Generating response from {model}...[/bold green]"
+            f"[bold green]Generating response from {escape(model)}...[/bold green]"
         ):
             response = manager.chat(model, messages, runtime_type=backend)
 
-        console.print(Panel(response, title=f"Model: {model}", border_style="cyan"))
+        console.print(
+            Panel(
+                Text(response),
+                title=f"Model: {escape(model)}",
+                border_style="cyan",
+            )
+        )
     except LoomcastError as e:
-        console.print(f"[bold red]Chat error:[/bold red] {e}")
+        console.print(f"[bold red]Chat error:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -225,7 +236,7 @@ def config_cmd(
             )
         except ValueError:
             console.print(
-                f"[bold red]Invalid backend:[/bold red] '{set_default_backend}'."
+                f"[bold red]Invalid backend:[/bold red] '{escape(set_default_backend)}'."
             )
             raise typer.Exit(code=1) from None
 
@@ -236,7 +247,7 @@ def config_cmd(
         for k, v in config.model_dump().items():
             # Render enums as their value ("ollama"), not their repr
             # ("RuntimeType.OLLAMA"), which is what users type back into --set.
-            table.add_row(k, v.value if isinstance(v, Enum) else str(v))
+            table.add_row(k, escape(v.value if isinstance(v, Enum) else str(v)))
         console.print(table)
 
 
@@ -249,10 +260,12 @@ def search_cmd(
     try:
         entries = manager.search(query)
         if not entries:
-            console.print(f"[yellow]No models found matching query:[/yellow] '{query}'")
+            console.print(
+                f"[yellow]No models found matching query:[/yellow] '{escape(query)}'"
+            )
             return
 
-        table = Table(title=f"Catalog Search Results for '{query}'")
+        table = Table(title=f"Catalog Search Results for '{escape(query)}'")
         table.add_column("Name", style="green", no_wrap=True)
         table.add_column("Publisher", style="blue")
         table.add_column("Backend", style="magenta")
@@ -263,12 +276,16 @@ def search_cmd(
             tags_str = ", ".join(e.tags) if e.tags else "-"
             backend_str = e.default_runtime.value if e.default_runtime else "-"
             table.add_row(
-                e.name, e.publisher or "-", backend_str, e.description or "-", tags_str
+                escape(e.name),
+                escape(e.publisher or "-"),
+                backend_str,
+                escape(e.description or "-"),
+                escape(tags_str),
             )
 
         console.print(table)
     except LoomcastError as e:
-        console.print(f"[bold red]Search error:[/bold red] {e}")
+        console.print(f"[bold red]Search error:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -284,11 +301,11 @@ def recommend_cmd(
         entries = manager.recommend(task)
         if not entries:
             console.print(
-                f"[yellow]No recommendations found for task:[/yellow] '{task}'"
+                f"[yellow]No recommendations found for task:[/yellow] '{escape(task)}'"
             )
             return
 
-        table = Table(title=f"Recommended Models for Task '{task}'")
+        table = Table(title=f"Recommended Models for Task '{escape(task)}'")
         table.add_column("Name", style="green", no_wrap=True)
         table.add_column("Publisher", style="blue")
         table.add_column("Backend", style="magenta")
@@ -299,12 +316,16 @@ def recommend_cmd(
             tags_str = ", ".join(e.tags) if e.tags else "-"
             backend_str = e.default_runtime.value if e.default_runtime else "-"
             table.add_row(
-                e.name, e.publisher or "-", backend_str, e.description or "-", tags_str
+                escape(e.name),
+                escape(e.publisher or "-"),
+                backend_str,
+                escape(e.description or "-"),
+                escape(tags_str),
             )
 
         console.print(table)
     except LoomcastError as e:
-        console.print(f"[bold red]Recommendation error:[/bold red] {e}")
+        console.print(f"[bold red]Recommendation error:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -329,7 +350,7 @@ def install_category_cmd(
     effective_concurrent = 1 if sequential else max_concurrent
     try:
         console.print(
-            f"Batch installing category '[bold cyan]{category}[/bold cyan]' (max concurrent: {effective_concurrent})..."
+            f"Batch installing category '[bold cyan]{escape(category)}[/bold cyan]' (max concurrent: {effective_concurrent})..."
         )
         with RichProgressReporter(console=console) as progress:
             installed, failed = manager.install_category(
@@ -341,14 +362,16 @@ def install_category_cmd(
 
         console.print("[bold green]Category installation complete![/bold green]")
         console.print(
-            f"Successfully installed: [cyan]{len(installed)}[/cyan] model(s) ({', '.join(installed) if installed else 'None'})"
+            f"Successfully installed: [cyan]{len(installed)}[/cyan] model(s) ({escape(', '.join(installed)) if installed else 'None'})"
         )
         if failed:
             console.print(
-                f"Failed installations: [bold red]{len(failed)}[/bold red] model(s) ({', '.join(failed)})"
+                f"Failed installations: [bold red]{len(failed)}[/bold red] model(s) ({escape(', '.join(failed))})"
             )
     except LoomcastError as e:
-        console.print(f"[bold red]Category installation error:[/bold red] {e}")
+        console.print(
+            f"[bold red]Category installation error:[/bold red] {escape(str(e))}"
+        )
         raise typer.Exit(code=1) from None
 
 
@@ -369,19 +392,19 @@ def verify_cmd(
             else "[bold red]Not Verified[/bold red]"
         )
 
-        table = Table(title=f"Verification Result: {model}")
+        table = Table(title=f"Verification Result: {escape(model)}")
         table.add_column("Property", style="cyan")
         table.add_column("Value", style="yellow")
 
-        table.add_row("Model", res.model)
+        table.add_row("Model", escape(res.model))
         table.add_row("Runtime", res.runtime_type.value)
         table.add_row("Status", status_str)
-        table.add_row("Digest", res.digest or "[dim]N/A[/dim]")
-        table.add_row("Message", res.message)
+        table.add_row("Digest", escape(res.digest) if res.digest else "[dim]N/A[/dim]")
+        table.add_row("Message", escape(res.message))
 
         console.print(table)
     except LoomcastError as e:
-        console.print(f"[bold red]Verification error:[/bold red] {e}")
+        console.print(f"[bold red]Verification error:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
 
 
@@ -398,11 +421,13 @@ def doctor_cmd():
     try:
         LoomcastConfig.load()
         console.print(
-            f"[bold green]✓[/bold green] Configuration: loaded successfully from [cyan]{config_path}[/cyan]"
+            f"[bold green]✓[/bold green] Configuration: loaded successfully from [cyan]{escape(str(config_path))}[/cyan]"
         )
     except Exception as e:  # noqa: BLE001
         problems += 1
-        console.print(f"[bold red]✗[/bold red] Configuration: failed to load ({e})")
+        console.print(
+            f"[bold red]✗[/bold red] Configuration: failed to load ({escape(str(e))})"
+        )
 
     # 2. Environment variables
     env_keys = [
@@ -415,7 +440,7 @@ def doctor_cmd():
     active_env = [f"{k}={os.environ[k]}" for k in env_keys if k in os.environ]
     if active_env:
         console.print(
-            f"[bold green]✓[/bold green] Environment variables set: {', '.join(active_env)}"
+            f"[bold green]✓[/bold green] Environment variables set: {escape(', '.join(active_env))}"
         )
     else:
         console.print(
@@ -464,7 +489,7 @@ def doctor_cmd():
             except Exception as e:  # noqa: BLE001
                 problems += 1
                 console.print(
-                    f"[bold red]✗[/bold red] Catalog: static fallback catalog failed ({e})"
+                    f"[bold red]✗[/bold red] Catalog: static fallback catalog failed ({escape(str(e))})"
                 )
         else:
             console.print(
@@ -476,7 +501,9 @@ def doctor_cmd():
             console.print("[bold green]✓[/bold green] Catalog: reachable")
         except Exception as e:  # noqa: BLE001
             problems += 1
-            console.print(f"[bold red]✗[/bold red] Catalog: access failed ({e})")
+            console.print(
+                f"[bold red]✗[/bold red] Catalog: access failed ({escape(str(e))})"
+            )
 
     # 5. Embedded static catalog file integrity
     try:
@@ -487,11 +514,13 @@ def doctor_cmd():
     except CatalogIntegrityError as e:
         problems += 1
         console.print(
-            f"[bold red]✗[/bold red] Static catalog integrity: SHA-256 checksum mismatch ({e})"
+            f"[bold red]✗[/bold red] Static catalog integrity: SHA-256 checksum mismatch ({escape(str(e))})"
         )
     except Exception as e:  # noqa: BLE001
         problems += 1
-        console.print(f"[bold red]✗[/bold red] Static catalog integrity: error ({e})")
+        console.print(
+            f"[bold red]✗[/bold red] Static catalog integrity: error ({escape(str(e))})"
+        )
 
     # Summary
     console.print(f"\n[bold]{problems} problem(s) found, {warnings} warning(s)[/bold]")
