@@ -50,8 +50,10 @@ class LoomcastManager:
         if isinstance(runtime_type, str):
             try:
                 return RuntimeType(runtime_type.lower())
-            except ValueError:
-                raise LoomcastError(f"Unsupported runtime type: '{runtime_type}'")
+            except ValueError as e:
+                raise LoomcastError(
+                    f"Unsupported runtime type: '{runtime_type}'"
+                ) from e
         return runtime_type
 
     def get_runtime(self, runtime_type: RuntimeType | str | None = None) -> RuntimePort:

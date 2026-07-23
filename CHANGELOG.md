@@ -44,6 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ruff is pinned to 0.16.0 and the lint rule set is declared explicitly via
   `select`. Previously only `ignore` was set, so ruff fell back to its built-in
   defaults, which changed between releases and broke CI.
+- Exception chaining is now explicit everywhere (ruff `B904`, added to `select`
+  so it cannot regress). `LoomcastError` raised for an unknown runtime type now
+  carries the original `ValueError` as its `__cause__`; the CLI's `typer.Exit`
+  calls use `from None`, since they are control flow after the error has already
+  been reported to the user.
 
 ## [0.1.1] - 2026-07-23
 
