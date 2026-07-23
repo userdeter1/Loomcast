@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any
 
 from loomcast.adapters.downloader.progress import (
@@ -26,6 +27,13 @@ from loomcast.domain.entities import (
     RuntimeType,
     VerificationResult,
 )
+
+try:
+    # Read from installed package metadata so the version is declared in exactly
+    # one place (pyproject.toml) and cannot drift.
+    __version__ = version("loomcast")
+except PackageNotFoundError:  # pragma: no cover - running from a source tree
+    __version__ = "0.0.0.dev0"
 
 _default_manager: LoomcastManager | None = None
 
@@ -128,6 +136,7 @@ def is_model_installed(
 
 
 __all__ = [
+    "__version__",
     "CacheError",
     "CatalogEntry",
     "CatalogIntegrityError",

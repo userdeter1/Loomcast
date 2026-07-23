@@ -54,8 +54,8 @@ class ModelVerifier:
                 verified=False,
                 digest=None,
                 message=(
-                    "LM Studio n'expose pas de digest vérifiable via son API ; "
-                    "vérification non disponible pour ce runtime."
+                    "LM Studio does not expose a verifiable digest through its API; "
+                    "verification is unavailable for this runtime."
                 ),
             )
 

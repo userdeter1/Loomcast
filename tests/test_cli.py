@@ -186,7 +186,7 @@ def test_cli_update_success(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
     result = runner.invoke(app, ["update", "llama3"])
     assert result.exit_code == 0
-    assert "Modèle mis à jour avec succès" in result.output
+    assert "Successfully updated model" in result.output
 
 
 def test_cli_update_already_latest(monkeypatch: pytest.MonkeyPatch):
@@ -197,7 +197,7 @@ def test_cli_update_already_latest(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
     result = runner.invoke(app, ["update", "llama3"])
     assert result.exit_code == 0
-    assert "Déjà à la dernière version, rien à faire" in result.output
+    assert "Already up to date, nothing to do" in result.output
 
 
 def test_cli_doctor_all_runtimes_available(monkeypatch: pytest.MonkeyPatch):
@@ -221,7 +221,7 @@ def test_cli_doctor_all_runtimes_available(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
     result = runner.invoke(app, ["doctor"])
     assert result.exit_code == 0
-    assert "0 problème(s) détecté(s)" in result.output
+    assert "0 problem(s) found" in result.output
 
 
 def test_cli_doctor_default_backend_offline(monkeypatch: pytest.MonkeyPatch):
@@ -245,7 +245,7 @@ def test_cli_doctor_default_backend_offline(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
     result = runner.invoke(app, ["doctor"])
     assert result.exit_code != 0
-    assert "1 problème(s) détecté(s)" in result.output
+    assert "1 problem(s) found" in result.output
 
 
 def test_cli_doctor_dynamic_catalog_fallback_warning(monkeypatch: pytest.MonkeyPatch):
@@ -277,8 +277,8 @@ def test_cli_doctor_dynamic_catalog_fallback_warning(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
     result = runner.invoke(app, ["doctor"])
     assert result.exit_code == 0
-    assert "0 problème(s) détecté(s)" in result.output
-    assert "1 avertissement(s)" in result.output
+    assert "0 problem(s) found" in result.output
+    assert "1 warning(s)" in result.output
 
 
 def test_cli_doctor_static_catalog_checksum_failure(
@@ -317,4 +317,4 @@ def test_cli_doctor_static_catalog_checksum_failure(
 
     result = runner.invoke(app, ["doctor"])
     assert result.exit_code != 0
-    assert "1 problème(s) détecté(s)" in result.output
+    assert "1 problem(s) found" in result.output
