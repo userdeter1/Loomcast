@@ -1,6 +1,6 @@
 # Runtimes Supportés et Gestion des Backends
 
-Loomcast intègre une couche d'abstraction permettant de gérer de manière unifiée plusieurs serveurs d'exécution LLM locaux (runtimes). 
+Loomcast intègre une couche d'abstraction permettant de gérer de manière unifiée plusieurs serveurs d'exécution LLM locaux (runtimes).
 
 ---
 

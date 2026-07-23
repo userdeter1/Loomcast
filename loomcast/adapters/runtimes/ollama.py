@@ -32,7 +32,9 @@ class OllamaRuntime(RuntimePort):
             data = response.json()
             return data.get("models", [])
         except httpx.HTTPError as e:
-            raise RuntimeExecutionError(f"Failed to list Ollama models metadata: {e}") from e
+            raise RuntimeExecutionError(
+                f"Failed to list Ollama models metadata: {e}"
+            ) from e
 
     def list_installed(self) -> List[str]:
         """List all installed Ollama models."""
@@ -81,9 +83,13 @@ class OllamaRuntime(RuntimePort):
                         total = data.get("total")
                         progress.on_progress(status, completed, total)
             except httpx.HTTPError as e:
-                raise RuntimeExecutionError(f"Failed to install Ollama model '{model}': {e}") from e
+                raise RuntimeExecutionError(
+                    f"Failed to install Ollama model '{model}': {e}"
+                ) from e
             except json.JSONDecodeError as e:
-                raise RuntimeExecutionError(f"Invalid JSON response during model pull: {e}") from e
+                raise RuntimeExecutionError(
+                    f"Invalid JSON response during model pull: {e}"
+                ) from e
         else:
             try:
                 response = httpx.post(
@@ -93,7 +99,9 @@ class OllamaRuntime(RuntimePort):
                 )
                 response.raise_for_status()
             except httpx.HTTPError as e:
-                raise RuntimeExecutionError(f"Failed to install Ollama model '{model}': {e}") from e
+                raise RuntimeExecutionError(
+                    f"Failed to install Ollama model '{model}': {e}"
+                ) from e
 
     def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
         """Send chat messages to Ollama native API."""
@@ -114,4 +122,6 @@ class OllamaRuntime(RuntimePort):
             data = response.json()
             return data.get("message", {}).get("content", "")
         except httpx.HTTPError as e:
-            raise RuntimeExecutionError(f"Ollama chat execution failed for model '{model}': {e}") from e
+            raise RuntimeExecutionError(
+                f"Ollama chat execution failed for model '{model}': {e}"
+            ) from e

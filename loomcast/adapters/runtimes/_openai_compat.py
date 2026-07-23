@@ -27,7 +27,11 @@ def send_openai_compat_chat(
         data = response.json()
         choices = data.get("choices", [])
         if not choices:
-            raise RuntimeExecutionError(f"Empty choices returned from {runtime_name} chat API.")
+            raise RuntimeExecutionError(
+                f"Empty choices returned from {runtime_name} chat API."
+            )
         return choices[0].get("message", {}).get("content", "")
     except httpx.HTTPError as e:
-        raise RuntimeExecutionError(f"{runtime_name} chat execution failed for model '{model}': {e}") from e
+        raise RuntimeExecutionError(
+            f"{runtime_name} chat execution failed for model '{model}': {e}"
+        ) from e

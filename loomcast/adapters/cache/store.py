@@ -19,7 +19,9 @@ class FileSystemCache(CachePort):
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
         except OSError as e:
-            raise CacheError(f"Failed to create cache directory '{self.cache_dir}': {e}") from e
+            raise CacheError(
+                f"Failed to create cache directory '{self.cache_dir}': {e}"
+            ) from e
 
     def _get_path(self, key: str) -> Path:
         return self.cache_dir / key
@@ -48,7 +50,9 @@ class FileSystemCache(CachePort):
         try:
             return path.is_file()
         except OSError as e:
-            raise CacheError(f"Failed to check existence for cache entry '{key}': {e}") from e
+            raise CacheError(
+                f"Failed to check existence for cache entry '{key}': {e}"
+            ) from e
 
     @staticmethod
     def compute_key(data: bytes) -> str:

@@ -1,9 +1,10 @@
+import hashlib
 import json
-import pytest
 from pathlib import Path
+import pytest
 
 from loomcast.adapters.catalog.static import StaticCatalog
-from loomcast.common.exceptions import LoomcastError
+from loomcast.common.exceptions import CatalogIntegrityError, LoomcastError
 from loomcast.ports.catalog import CatalogPort
 
 
@@ -58,7 +59,12 @@ def test_static_catalog_invalid_json_validation(tmp_path: Path):
 
     # Case 1: Invalid schema (missing name field)
     bad_data = [{"description": "Missing name field"}]
-    invalid_json_file.write_text(json.dumps(bad_data), encoding="utf-8")
+    bad_bytes = json.dumps(bad_data).encode("utf-8")
+    invalid_json_file.write_bytes(bad_bytes)
+
+    # Write matching checksum so it passes integrity check but fails schema validation
+    checksum_file = tmp_path / "bad_catalog.json.sha256"
+    checksum_file.write_text(hashlib.sha256(bad_bytes).hexdigest(), encoding="utf-8")
 
     with pytest.raises(LoomcastError):
         StaticCatalog(catalog_path=invalid_json_file)
@@ -68,23 +74,94 @@ def test_static_catalog_invalid_json_validation(tmp_path: Path):
         StaticCatalog(catalog_path=tmp_path / "non_existent.json")
 
 
-def test_catalog_json_included_in_package_resources():
-    """
-    REGRESSION TEST (Bug fixed in version 0.1.1):
-    In version 0.1.0 published on PyPI, `adapters/catalog/data/catalog.json` was missing from
-    the built wheel and sdist distributions because `include-package-data = true`,
-    `[tool.setuptools.package-data]`, and `MANIFEST.in` were missing from packaging configs.
-    This rendered almost all loomcast commands unusable after a standard `pip install`.
+def test_static_catalog_checksum_mismatch(tmp_path: Path):
+    """Test that StaticCatalog raises CatalogIntegrityError if catalog.json does not match catalog.json.sha256."""
+    catalog_file = tmp_path / "catalog.json"
+    checksum_file = tmp_path / "catalog.json.sha256"
 
-    DO NOT DELETE THIS TEST: This test ensures that `catalog.json` is registered and accessible
-    as a Python package resource via `importlib.resources`, guaranteeing it will be bundled
-    and accessible when installed from PyPI.
+    catalog_data = [
+        {
+            "name": "test-model",
+            "publisher": "test",
+            "tags": ["test"],
+            "default_runtime": "ollama",
+        }
+    ]
+    catalog_file.write_text(json.dumps(catalog_data), encoding="utf-8")
+
+    # Write invalid / tampered checksum
+    checksum_file.write_text("invalid_hash_1234567890abcdef", encoding="utf-8")
+
+    with pytest.raises(CatalogIntegrityError) as exc_info:
+        StaticCatalog(catalog_path=catalog_file)
+
+    assert "Catalog integrity check failed" in str(exc_info.value)
+
+
+def test_static_catalog_missing_checksum(tmp_path: Path):
+    """Test that StaticCatalog raises CatalogIntegrityError if catalog.json.sha256 is missing."""
+    catalog_file = tmp_path / "catalog.json"
+    catalog_data = [
+        {
+            "name": "test-model",
+            "publisher": "test",
+            "tags": ["test"],
+            "default_runtime": "ollama",
+        }
+    ]
+    catalog_file.write_text(json.dumps(catalog_data), encoding="utf-8")
+
+    with pytest.raises(CatalogIntegrityError) as exc_info:
+        StaticCatalog(catalog_path=catalog_file)
+
+    assert "Checksum file not found" in str(exc_info.value)
+
+
+def test_static_catalog_valid_checksum(tmp_path: Path):
+    """Test that StaticCatalog initializes successfully when checksum matches."""
+    catalog_file = tmp_path / "catalog.json"
+    checksum_file = tmp_path / "catalog.json.sha256"
+
+    catalog_data = [
+        {
+            "name": "valid-model",
+            "publisher": "test",
+            "tags": ["test"],
+            "default_runtime": "ollama",
+        }
+    ]
+    content_bytes = json.dumps(catalog_data).encode("utf-8")
+    catalog_file.write_bytes(content_bytes)
+
+    valid_hash = hashlib.sha256(content_bytes).hexdigest()
+    checksum_file.write_text(f"{valid_hash}\n", encoding="utf-8")
+
+    catalog = StaticCatalog(catalog_path=catalog_file)
+    assert catalog.get_entry("valid-model") is not None
+
+
+def test_catalog_json_and_sha256_included_in_package_resources():
+    """
+    REGRESSION TEST:
+    Ensure catalog.json and catalog.json.sha256 are bundled as package resources.
     """
     import importlib.resources
 
     try:
-        catalog_resource = importlib.resources.files("loomcast.adapters.catalog").joinpath("data", "catalog.json")
+        catalog_resource = importlib.resources.files(
+            "loomcast.adapters.catalog"
+        ).joinpath("data", "catalog.json")
+        checksum_resource = importlib.resources.files(
+            "loomcast.adapters.catalog"
+        ).joinpath("data", "catalog.json.sha256")
         assert catalog_resource.is_file(), "catalog.json missing from package resources"
+        assert (
+            checksum_resource.is_file()
+        ), "catalog.json.sha256 missing from package resources"
     except AttributeError:
-        assert importlib.resources.is_resource("loomcast.adapters.catalog.data", "catalog.json")
-
+        assert importlib.resources.is_resource(
+            "loomcast.adapters.catalog.data", "catalog.json"
+        )
+        assert importlib.resources.is_resource(
+            "loomcast.adapters.catalog.data", "catalog.json.sha256"
+        )

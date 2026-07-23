@@ -27,13 +27,15 @@ def test_ollama_live_install_and_chat(ollama_adapter: OllamaRuntime) -> None:
     """Teste l'installation d'un modèle léger et l'envoi d'un message de chat réel."""
     # Modèle très léger pour des tests rapides
     model_name = "qwen2.5:0.5b"
-    
+
     # 1. Installation / Pull du modèle
     ollama_adapter.install(model_name)
     assert ollama_adapter.is_model_installed(model_name) is True
 
     # 2. Envoi d'un message réel
-    messages = [{"role": "user", "content": "Dis simplement 'OK' pour valider le test."}]
+    messages = [
+        {"role": "user", "content": "Dis simplement 'OK' pour valider le test."}
+    ]
     response = ollama_adapter.chat(model_name, messages)
 
     # 3. Vérification de la réponse non vide

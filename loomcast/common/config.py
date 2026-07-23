@@ -19,6 +19,7 @@ from loomcast.domain.entities import RuntimeType
 
 class LoomcastConfig(BaseModel):
     """Loomcast configuration model."""
+
     default_backend: RuntimeType = Field(default=RuntimeType.OLLAMA)
     catalog_source: str = Field(default="https://ollama.com/library")
     ollama_url: str = Field(default="http://localhost:11434")
@@ -42,7 +43,9 @@ class LoomcastConfig(BaseModel):
                     file_data = tomllib.load(f)
                 config = cls(**file_data)
             except Exception as e:
-                raise ConfigurationError(f"Failed to parse config file at {path}: {e}") from e
+                raise ConfigurationError(
+                    f"Failed to parse config file at {path}: {e}"
+                ) from e
 
         config._file_data = dict(file_data)
         config._env_keys = set()
@@ -83,11 +86,15 @@ class LoomcastConfig(BaseModel):
                     data[field_name] = self._file_data[field_name]
                 else:
                     default_instance = self.__class__()
-                    data[field_name] = default_instance.model_dump(mode="json")[field_name]
+                    data[field_name] = default_instance.model_dump(mode="json")[
+                        field_name
+                    ]
 
             with open(path, "wb") as f:
                 tomli_w.dump(data, f)
         except Exception as e:
             if isinstance(e, ConfigurationError):
                 raise
-            raise ConfigurationError(f"Failed to write config file at {path}: {e}") from e
+            raise ConfigurationError(
+                f"Failed to write config file at {path}: {e}"
+            ) from e

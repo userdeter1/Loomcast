@@ -1,5 +1,7 @@
 from loomcast.common.config import LoomcastConfig
 from loomcast.common.exceptions import (
+    CacheError,
+    CatalogIntegrityError,
     ConfigurationError,
     LoomcastError,
     ModelNotFoundError,
@@ -17,10 +19,12 @@ from loomcast.common.paths import (
 __all__ = [
     "LoomcastConfig",
     "LoomcastError",
+    "CatalogIntegrityError",
     "RuntimeUnavailableError",
     "ModelNotFoundError",
     "ConfigurationError",
     "RuntimeExecutionError",
+    "CacheError",
     "logger",
     "setup_logger",
     "get_config_dir",

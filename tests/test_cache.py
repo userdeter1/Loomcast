@@ -53,7 +53,9 @@ def test_file_system_cache_compute_key_deterministic():
     assert key1 != FileSystemCache.compute_key(b"different_content")
 
 
-def test_file_system_cache_error_handling(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_file_system_cache_error_handling(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
     """Test disk error handling converts OSError to CacheError."""
     cache = FileSystemCache(cache_dir=tmp_path)
 

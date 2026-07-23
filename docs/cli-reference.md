@@ -1,6 +1,6 @@
 # Référence CLI de Loomcast
 
-Loomcast fournit une interface en ligne de commande (CLI) bâtie avec [Typer](https://typer.tiangolo.com/) et [Rich](https://rich.readthedocs.io/). 
+Loomcast fournit une interface en ligne de commande (CLI) bâtie avec [Typer](https://typer.tiangolo.com/) et [Rich](https://rich.readthedocs.io/).
 
 Toutes les commandes sont accessibles via l'exécutable `loomcast` (ou `python -m loomcast.cli.main`).
 

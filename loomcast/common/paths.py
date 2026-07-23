@@ -16,7 +16,6 @@ def get_config_file_path() -> Path:
     return get_config_dir() / "config.toml"
 
 
-
 def get_cache_dir() -> Path:
     """Return the cross-platform cache directory."""
     cache_dir = Path(platformdirs.user_cache_dir(APP_NAME))
