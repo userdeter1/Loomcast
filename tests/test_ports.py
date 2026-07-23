@@ -6,6 +6,7 @@ from loomcast.ports.runtime import RuntimePort
 
 class DummyRuntimeAdapter:
     """Pure mock implementation of RuntimePort without network calls."""
+
     def __init__(self):
         self._installed = ["llama3:latest", "mistral:latest"]
         self._available = True

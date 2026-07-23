@@ -101,7 +101,12 @@ def test_save_does_not_persist_env_var_override(tmp_path: Path, monkeypatch):
 
 
 def test_no_env_var_non_regression(tmp_path: Path, monkeypatch):
-    for var in ["LOOMCAST_DEFAULT_BACKEND", "LOOMCAST_OLLAMA_URL", "LOOMCAST_LMSTUDIO_URL", "LOOMCAST_CATALOG_SOURCE"]:
+    for var in [
+        "LOOMCAST_DEFAULT_BACKEND",
+        "LOOMCAST_OLLAMA_URL",
+        "LOOMCAST_LMSTUDIO_URL",
+        "LOOMCAST_CATALOG_SOURCE",
+    ]:
         monkeypatch.delenv(var, raising=False)
 
     config_file = tmp_path / "config.toml"

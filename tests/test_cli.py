@@ -9,10 +9,23 @@ runner = CliRunner()
 
 def test_cli_status(monkeypatch: pytest.MonkeyPatch):
     class MockManager:
-        config = type("Config", (), {"default_backend": RuntimeType.OLLAMA, "ollama_url": "http://localhost:11434", "lmstudio_url": "http://localhost:1234", "llamacpp_url": "http://localhost:8080"})()
+        config = type(
+            "Config",
+            (),
+            {
+                "default_backend": RuntimeType.OLLAMA,
+                "ollama_url": "http://localhost:11434",
+                "lmstudio_url": "http://localhost:1234",
+                "llamacpp_url": "http://localhost:8080",
+            },
+        )()
 
         def list_available_runtimes(self):
-            return {RuntimeType.OLLAMA: True, RuntimeType.LMSTUDIO: False, RuntimeType.LLAMACPP: False}
+            return {
+                RuntimeType.OLLAMA: True,
+                RuntimeType.LMSTUDIO: False,
+                RuntimeType.LLAMACPP: False,
+            }
 
     monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
     result = runner.invoke(app, ["status"])
@@ -94,7 +107,9 @@ def test_cli_install_category_sequential(monkeypatch: pytest.MonkeyPatch):
     passed_args = {}
 
     class MockManager:
-        def install_category(self, category, runtime_type=None, max_concurrent=3, progress=None):
+        def install_category(
+            self, category, runtime_type=None, max_concurrent=3, progress=None
+        ):
             passed_args["max_concurrent"] = max_concurrent
             return (["codellama"], [])
 

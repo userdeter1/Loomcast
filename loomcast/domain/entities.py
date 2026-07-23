@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class RuntimeType(str, Enum):
     """Supported local LLM runtime backends."""
+
     OLLAMA = "ollama"
     LMSTUDIO = "lmstudio"
     LLAMACPP = "llamacpp"
@@ -12,6 +13,7 @@ class RuntimeType(str, Enum):
 
 class Model(BaseModel):
     """Pure domain entity representing an LLM model."""
+
     name: str
     runtime_type: RuntimeType
     size_bytes: Optional[int] = None
@@ -22,6 +24,7 @@ class Model(BaseModel):
 
 class CatalogEntry(BaseModel):
     """Pure domain entity representing a model catalog entry."""
+
     name: str
     description: Optional[str] = None
     publisher: Optional[str] = None
@@ -31,15 +34,16 @@ class CatalogEntry(BaseModel):
 
 class ChatMessage(BaseModel):
     """Pure domain entity representing a chat message."""
+
     role: str
     content: str
 
 
 class VerificationResult(BaseModel):
     """Pure domain entity representing the verification result of a model."""
+
     model: str
     runtime_type: RuntimeType
     verified: bool
     digest: Optional[str] = None
     message: str
-

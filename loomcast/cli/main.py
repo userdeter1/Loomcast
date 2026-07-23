@@ -51,7 +51,11 @@ def status_cmd():
         else:
             endpoint = "-"
         is_default = "[bold cyan]Yes[/bold cyan]" if rtype == default_backend else "No"
-        status_str = "[bold green]Online[/bold green]" if is_online else "[bold red]Offline[/bold red]"
+        status_str = (
+            "[bold green]Online[/bold green]"
+            if is_online
+            else "[bold red]Offline[/bold red]"
+        )
         table.add_row(rtype.value.upper(), endpoint, is_default, status_str)
 
     console.print(table)
@@ -59,7 +63,9 @@ def status_cmd():
 
 @app.command("list")
 def list_cmd(
-    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)")
+    backend: Optional[str] = typer.Option(
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+    ),
 ):
     """List installed models in local runtimes."""
     manager = get_manager()
@@ -80,7 +86,9 @@ def list_cmd(
                 try:
                     models = adapter.list_installed()
                     if not models:
-                        table.add_row(rtype.value.upper(), "[dim]No models installed[/dim]")
+                        table.add_row(
+                            rtype.value.upper(), "[dim]No models installed[/dim]"
+                        )
                     else:
                         for m in models:
                             table.add_row(rtype.value.upper(), m)
@@ -91,14 +99,18 @@ def list_cmd(
 
         console.print(table)
     except ValueError:
-        console.print(f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama' or 'lmstudio'.")
+        console.print(
+            f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama' or 'lmstudio'."
+        )
         raise typer.Exit(code=1)
 
 
 @app.command("install")
 def install_cmd(
     model: str = typer.Argument(..., help="Model identifier to install/pull"),
-    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"),
+    backend: Optional[str] = typer.Option(
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+    ),
 ):
     """Install or pull a model into the target runtime."""
     manager = get_manager()
@@ -106,7 +118,9 @@ def install_cmd(
         console.print(f"Installing model '[bold cyan]{model}[/bold cyan]'...")
         with RichProgressReporter(console=console) as progress:
             manager.install(model, runtime_type=backend, progress=progress)
-        console.print(f"[bold green]Successfully installed model '[cyan]{model}[/cyan]'![/bold green]")
+        console.print(
+            f"[bold green]Successfully installed model '[cyan]{model}[/cyan]'![/bold green]"
+        )
     except LoomcastError as e:
         console.print(f"[bold red]Installation failed:[/bold red] {e}")
         raise typer.Exit(code=1)
@@ -116,13 +130,17 @@ def install_cmd(
 def chat_cmd(
     model: str = typer.Argument(..., help="Model name to chat with"),
     prompt: str = typer.Argument(..., help="User prompt string"),
-    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"),
+    backend: Optional[str] = typer.Option(
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+    ),
 ):
     """Send a single prompt to a model and display the response."""
     manager = get_manager()
     try:
         messages = [{"role": "user", "content": prompt}]
-        with console.status(f"[bold green]Generating response from {model}...[/bold green]"):
+        with console.status(
+            f"[bold green]Generating response from {model}...[/bold green]"
+        ):
             response = manager.chat(model, messages, runtime_type=backend)
 
         console.print(Panel(response, title=f"Model: {model}", border_style="cyan"))
@@ -133,8 +151,12 @@ def chat_cmd(
 
 @app.command("config")
 def config_cmd(
-    set_default_backend: Optional[str] = typer.Option(None, "--set-default", help="Set default backend (ollama | lmstudio)"),
-    show: bool = typer.Option(True, "--show/--no-show", help="Display current configuration"),
+    set_default_backend: Optional[str] = typer.Option(
+        None, "--set-default", help="Set default backend (ollama | lmstudio)"
+    ),
+    show: bool = typer.Option(
+        True, "--show/--no-show", help="Display current configuration"
+    ),
 ):
     """View or update Loomcast configuration."""
     config = LoomcastConfig.load()
@@ -142,9 +164,13 @@ def config_cmd(
         try:
             config.default_backend = RuntimeType(set_default_backend.lower())
             config.save()
-            console.print(f"[bold green]Default backend updated to:[/bold green] {config.default_backend.value}")
+            console.print(
+                f"[bold green]Default backend updated to:[/bold green] {config.default_backend.value}"
+            )
         except ValueError:
-            console.print(f"[bold red]Invalid backend:[/bold red] '{set_default_backend}'.")
+            console.print(
+                f"[bold red]Invalid backend:[/bold red] '{set_default_backend}'."
+            )
             raise typer.Exit(code=1)
 
     if show:
@@ -178,7 +204,9 @@ def search_cmd(
         for e in entries:
             tags_str = ", ".join(e.tags) if e.tags else "-"
             backend_str = e.default_runtime.value if e.default_runtime else "-"
-            table.add_row(e.name, e.publisher or "-", backend_str, e.description or "-", tags_str)
+            table.add_row(
+                e.name, e.publisher or "-", backend_str, e.description or "-", tags_str
+            )
 
         console.print(table)
     except LoomcastError as e:
@@ -188,14 +216,18 @@ def search_cmd(
 
 @app.command("recommend")
 def recommend_cmd(
-    task: str = typer.Argument(..., help="Task or category tag to filter recommendations"),
+    task: str = typer.Argument(
+        ..., help="Task or category tag to filter recommendations"
+    ),
 ):
     """Recommend models for a specific task or category tag."""
     manager = get_manager()
     try:
         entries = manager.recommend(task)
         if not entries:
-            console.print(f"[yellow]No recommendations found for task:[/yellow] '{task}'")
+            console.print(
+                f"[yellow]No recommendations found for task:[/yellow] '{task}'"
+            )
             return
 
         table = Table(title=f"Recommended Models for Task '{task}'")
@@ -208,7 +240,9 @@ def recommend_cmd(
         for e in entries:
             tags_str = ", ".join(e.tags) if e.tags else "-"
             backend_str = e.default_runtime.value if e.default_runtime else "-"
-            table.add_row(e.name, e.publisher or "-", backend_str, e.description or "-", tags_str)
+            table.add_row(
+                e.name, e.publisher or "-", backend_str, e.description or "-", tags_str
+            )
 
         console.print(table)
     except LoomcastError as e:
@@ -219,15 +253,26 @@ def recommend_cmd(
 @app.command("install-category")
 def install_category_cmd(
     category: str = typer.Argument(..., help="Category tag to batch install"),
-    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"),
-    max_concurrent: int = typer.Option(3, "--max-concurrent", "-c", help="Maximum concurrent model downloads"),
-    sequential: bool = typer.Option(False, "--sequential", "-s", help="Run model installations sequentially (max_concurrent=1)"),
+    backend: Optional[str] = typer.Option(
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
+    ),
+    max_concurrent: int = typer.Option(
+        3, "--max-concurrent", "-c", help="Maximum concurrent model downloads"
+    ),
+    sequential: bool = typer.Option(
+        False,
+        "--sequential",
+        "-s",
+        help="Run model installations sequentially (max_concurrent=1)",
+    ),
 ):
     """Batch install all models in a specific category."""
     manager = get_manager()
     effective_concurrent = 1 if sequential else max_concurrent
     try:
-        console.print(f"Batch installing category '[bold cyan]{category}[/bold cyan]' (max concurrent: {effective_concurrent})...")
+        console.print(
+            f"Batch installing category '[bold cyan]{category}[/bold cyan]' (max concurrent: {effective_concurrent})..."
+        )
         with RichProgressReporter(console=console) as progress:
             installed, failed = manager.install_category(
                 category,
@@ -237,9 +282,13 @@ def install_category_cmd(
             )
 
         console.print("[bold green]Category installation complete![/bold green]")
-        console.print(f"Successfully installed: [cyan]{len(installed)}[/cyan] model(s) ({', '.join(installed) if installed else 'None'})")
+        console.print(
+            f"Successfully installed: [cyan]{len(installed)}[/cyan] model(s) ({', '.join(installed) if installed else 'None'})"
+        )
         if failed:
-            console.print(f"Failed installations: [bold red]{len(failed)}[/bold red] model(s) ({', '.join(failed)})")
+            console.print(
+                f"Failed installations: [bold red]{len(failed)}[/bold red] model(s) ({', '.join(failed)})"
+            )
     except LoomcastError as e:
         console.print(f"[bold red]Category installation error:[/bold red] {e}")
         raise typer.Exit(code=1)
@@ -248,13 +297,19 @@ def install_category_cmd(
 @app.command("verify")
 def verify_cmd(
     model: str = typer.Argument(..., help="Model name to verify"),
-    backend: Optional[str] = typer.Option(None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"),
+    backend: Optional[str] = typer.Option(
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+    ),
 ):
     """Verify integrity of an installed model."""
     manager = get_manager()
     try:
         res = manager.verify(model, runtime_type=backend)
-        status_str = "[bold green]Verified[/bold green]" if res.verified else "[bold red]Not Verified[/bold red]"
+        status_str = (
+            "[bold green]Verified[/bold green]"
+            if res.verified
+            else "[bold red]Not Verified[/bold red]"
+        )
 
         table = Table(title=f"Verification Result: {model}")
         table.add_column("Property", style="cyan")

@@ -11,6 +11,7 @@ from loomcast.domain.entities import RuntimeType
 
 def test_verify_ollama_model_with_digest(monkeypatch: pytest.MonkeyPatch):
     """Test verify() on Ollama model with valid digest present returns verified=True."""
+
     def mock_handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/tags":
             return httpx.Response(
@@ -42,6 +43,7 @@ def test_verify_ollama_model_with_digest(monkeypatch: pytest.MonkeyPatch):
 
 def test_verify_ollama_model_missing_digest(monkeypatch: pytest.MonkeyPatch):
     """Test verify() on Ollama model with missing/empty digest returns verified=False."""
+
     def mock_handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/tags":
             return httpx.Response(
@@ -73,15 +75,12 @@ def test_verify_ollama_model_missing_digest(monkeypatch: pytest.MonkeyPatch):
 
 def test_verify_lmstudio_model(monkeypatch: pytest.MonkeyPatch):
     """Test verify() on LM Studio returns verified=False with explanatory message."""
+
     def mock_handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/v1/models":
             return httpx.Response(
                 200,
-                json={
-                    "data": [
-                        {"id": "meta-llama-3-8b-instruct"}
-                    ]
-                },
+                json={"data": [{"id": "meta-llama-3-8b-instruct"}]},
             )
         return httpx.Response(404)
 
@@ -101,6 +100,7 @@ def test_verify_lmstudio_model(monkeypatch: pytest.MonkeyPatch):
 
 def test_verify_non_installed_model_raises_exception(monkeypatch: pytest.MonkeyPatch):
     """Test verify() on a non-installed model raises ModelNotFoundError."""
+
     def mock_handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/tags":
             return httpx.Response(200, json={"models": []})
@@ -119,6 +119,7 @@ def test_verify_non_installed_model_raises_exception(monkeypatch: pytest.MonkeyP
 
 def test_loomcast_manager_verify_integration(monkeypatch: pytest.MonkeyPatch):
     """Test LoomcastManager.verify delegation."""
+
     def mock_handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/api/tags":
             return httpx.Response(

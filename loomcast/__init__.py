@@ -8,6 +8,7 @@ from loomcast.adapters.downloader.progress import (
 from loomcast.common.config import LoomcastConfig
 from loomcast.common.exceptions import (
     CacheError,
+    CatalogIntegrityError,
     ConfigurationError,
     LoomcastError,
     ModelNotFoundError,
@@ -16,7 +17,14 @@ from loomcast.common.exceptions import (
 )
 from loomcast.adapters.runtimes import LlamaCppRuntime
 from loomcast.core.manager import LoomcastManager
-from loomcast.domain.entities import CatalogEntry, ChatMessage, Model, RuntimeType, VerificationResult
+from loomcast.domain.entities import (
+    CatalogEntry,
+    ChatMessage,
+    Model,
+    RuntimeType,
+    VerificationResult,
+)
+
 
 _default_manager: Optional[LoomcastManager] = None
 
@@ -117,6 +125,7 @@ __all__ = [
     "LlamaCppRuntime",
     "LoomcastConfig",
     "LoomcastError",
+    "CatalogIntegrityError",
     "RuntimeUnavailableError",
     "ModelNotFoundError",
     "ConfigurationError",

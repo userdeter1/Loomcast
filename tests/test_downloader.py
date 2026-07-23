@@ -66,12 +66,14 @@ def test_ollama_runtime_install_with_progress_reporter_streaming(monkeypatch):
     runtime.install("llama3", progress=mock_reporter)
 
     assert mock_reporter.on_progress.call_count == 4
-    mock_reporter.on_progress.assert_has_calls([
-        call("pulling manifest", None, None),
-        call("downloading digestname", 500, 1000),
-        call("verifying sha256 digest", None, None),
-        call("success", None, None),
-    ])
+    mock_reporter.on_progress.assert_has_calls(
+        [
+            call("pulling manifest", None, None),
+            call("downloading digestname", 500, 1000),
+            call("verifying sha256 digest", None, None),
+            call("success", None, None),
+        ]
+    )
 
 
 def test_ollama_runtime_install_without_progress_reporter(monkeypatch):

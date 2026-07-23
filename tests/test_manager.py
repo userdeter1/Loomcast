@@ -53,8 +53,11 @@ class DummyCatalogAdapter(CatalogPort):
     def search(self, query: str):
         q = query.lower()
         return [
-            e for e in self.entries
-            if q in e.name.lower() or q in (e.description or "").lower() or any(q in t.lower() for t in e.tags)
+            e
+            for e in self.entries
+            if q in e.name.lower()
+            or q in (e.description or "").lower()
+            or any(q in t.lower() for t in e.tags)
         ]
 
     def get_entry(self, name: str):
@@ -154,7 +157,9 @@ def test_manager_install_category_partial_failure():
     manager = LoomcastManager(catalog=catalog)
     manager.runtimes[RuntimeType.OLLAMA] = adapter
 
-    installed, failed = manager.install_category("code", runtime_type=RuntimeType.OLLAMA, max_concurrent=1)
+    installed, failed = manager.install_category(
+        "code", runtime_type=RuntimeType.OLLAMA, max_concurrent=1
+    )
 
     assert "codellama" in installed
     assert "deepseek-coder" in failed
@@ -169,13 +174,17 @@ def test_install_category_parallel_matches_sequential_result():
     seq_adapter = PartialFailureRuntimeAdapter()
     seq_manager = LoomcastManager(catalog=catalog)
     seq_manager.runtimes[RuntimeType.OLLAMA] = seq_adapter
-    seq_installed, seq_failed = seq_manager.install_category("code", runtime_type=RuntimeType.OLLAMA, max_concurrent=1)
+    seq_installed, seq_failed = seq_manager.install_category(
+        "code", runtime_type=RuntimeType.OLLAMA, max_concurrent=1
+    )
 
     # Run parallel (max_concurrent=3)
     par_adapter = PartialFailureRuntimeAdapter()
     par_manager = LoomcastManager(catalog=catalog)
     par_manager.runtimes[RuntimeType.OLLAMA] = par_adapter
-    par_installed, par_failed = par_manager.install_category("code", runtime_type=RuntimeType.OLLAMA, max_concurrent=3)
+    par_installed, par_failed = par_manager.install_category(
+        "code", runtime_type=RuntimeType.OLLAMA, max_concurrent=3
+    )
 
     assert set(seq_installed) == set(par_installed)
     assert set(seq_failed) == set(par_failed)
@@ -187,7 +196,9 @@ def test_install_category_parallel_partial_failure():
     par_manager = LoomcastManager(catalog=catalog)
     par_manager.runtimes[RuntimeType.OLLAMA] = par_adapter
 
-    installed, failed = par_manager.install_category("code", runtime_type=RuntimeType.OLLAMA, max_concurrent=3)
+    installed, failed = par_manager.install_category(
+        "code", runtime_type=RuntimeType.OLLAMA, max_concurrent=3
+    )
 
     assert "deepseek-coder" in failed
     assert "codellama" in installed
@@ -204,7 +215,9 @@ def test_install_category_respects_max_concurrent():
     manager.runtimes[RuntimeType.OLLAMA] = tracking_adapter
 
     # 4 models in category 'code', max_concurrent=2
-    installed, failed = manager.install_category("code", runtime_type=RuntimeType.OLLAMA, max_concurrent=2)
+    installed, failed = manager.install_category(
+        "code", runtime_type=RuntimeType.OLLAMA, max_concurrent=2
+    )
 
     assert len(installed) == 4
     assert len(failed) == 0

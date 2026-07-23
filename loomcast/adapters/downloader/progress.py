@@ -1,12 +1,21 @@
 from typing import Any, Dict, Optional
 from rich.console import Console
-from rich.progress import BarColumn, DownloadColumn, Progress, TaskID, TextColumn, TransferSpeedColumn
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    TaskID,
+    TextColumn,
+    TransferSpeedColumn,
+)
 
 
 class ProgressReporter:
     """Base callback object for model download progress tracking."""
 
-    def on_progress(self, status: str, completed: Optional[int] = None, total: Optional[int] = None) -> None:
+    def on_progress(
+        self, status: str, completed: Optional[int] = None, total: Optional[int] = None
+    ) -> None:
         """Receive a progress update callback.
 
         Args:
@@ -24,7 +33,9 @@ class ProgressReporter:
 class NullProgressReporter(ProgressReporter):
     """Silent progress reporter that ignores all progress events."""
 
-    def on_progress(self, status: str, completed: Optional[int] = None, total: Optional[int] = None) -> None:
+    def on_progress(
+        self, status: str, completed: Optional[int] = None, total: Optional[int] = None
+    ) -> None:
         pass
 
 
@@ -36,7 +47,9 @@ class SubProgressReporter(ProgressReporter):
         self.prefix = prefix
         self._task_id: Optional[TaskID] = None
 
-    def on_progress(self, status: str, completed: Optional[int] = None, total: Optional[int] = None) -> None:
+    def on_progress(
+        self, status: str, completed: Optional[int] = None, total: Optional[int] = None
+    ) -> None:
         self.parent.start()
         desc = f"[{self.prefix}] {status}" if self.prefix else status
         if self._task_id is None:
@@ -92,7 +105,9 @@ class RichProgressReporter(ProgressReporter):
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.stop()
 
-    def on_progress(self, status: str, completed: Optional[int] = None, total: Optional[int] = None) -> None:
+    def on_progress(
+        self, status: str, completed: Optional[int] = None, total: Optional[int] = None
+    ) -> None:
         """Update progress bar display with status and byte metrics."""
         if self._progress is None:
             self.start()

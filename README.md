@@ -1,6 +1,7 @@
 # Loomcast
 
-[![CI Status](https://img.shields.io/github/actions/workflow/status/<owner>/<repo>/ci.yml?branch=main&label=CI)](https://github.com/<owner>/<repo>/actions/workflows/ci.yml)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/userdeter1/Loomcast/ci.yml?branch=main&label=CI)](https://github.com/userdeter1/Loomcast/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-82%25-brightgreen.svg)](https://github.com/userdeter1/Loomcast/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org)
 
@@ -76,4 +77,3 @@ Detailed documentation guides are available in the [`docs/`](docs/) directory:
 - [Runtimes Supportés](docs/runtimes.md)
 - [Extension & Architecture](docs/extending.md)
 - [Référence CLI](docs/cli-reference.md)
-

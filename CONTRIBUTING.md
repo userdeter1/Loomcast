@@ -4,11 +4,14 @@ Bienvenue dans le projet Loomcast ! Merci d'adapter ces règles pour contribuer 
 
 ## 1. Installation et Exécution des Tests en Local
 
-Avant de soumettre vos modifications, installez le projet avec les dépendances de développement et exécutez la suite de tests :
+Avant de soumettre vos modifications, installez le projet avec les dépendances de développement, activez les hooks de pré-commit et exécutez la suite de tests :
 
 ```bash
 # Installation en mode éditable avec les dépendances dev
 pip install -e ".[dev]"
+
+# Installation des hooks pre-commit en local
+pre-commit install
 
 # Exécution des tests unitaires par défaut (les tests d'intégration sont ignorés automatiquement)
 pytest -v
@@ -18,6 +21,9 @@ pytest -m integration
 
 # Vérification du style de code avec Ruff
 ruff check .
+
+# Exécution manuelle de tous les hooks pre-commit
+pre-commit run --all-files
 ```
 
 > **Remarque** : La commande `pytest` sans l'option `-m` ignore automatiquement les tests d'intégration grâce à la configuration `addopts = "-m 'not integration'"` présente dans `pyproject.toml`.
@@ -33,7 +39,7 @@ Veuillez utiliser un nom de branche explicite lié à l'issue ou la fonctionnali
 ## 3. Workflow de Pull Request
 
 - **Branche cible** : Toutes les Pull Requests doivent être ouvertes vers la branche `main`.
-- **Passage de la CI** : Le workflow CI (tests unitaires sur Python 3.9 à 3.12 et lint Ruff) doit valider la PR avant qu'elle puisse être fusionnée.
+- **Passage de la CI** : Le workflow CI (tests unitaires sur Python 3.9 à 3.12, lint Ruff et scanning de secrets Gitleaks) doit valider la PR avant qu'elle puisse être fusionnée.
 - **Revue de code** : Les PRs sont revues par le mainteneur du projet avant fusion. Si le projet accueille plusieurs contributeurs à l'avenir, un fichier CODEOWNERS pourra être ajouté pour formaliser une revue croisée.
 - **Mise à jour de la documentation** : Si une commande CLI est modifiée ou ajoutée, mettez à jour le fichier `README.md`.
 
@@ -80,3 +86,12 @@ Lorsqu'une mise à jour d'une action GitHub tierce est nécessaire (ex: `actions
    uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
    ```
 4. **Tester et valider** que les workflows s'exécutent avec succès sur GitHub Actions après la mise à jour du SHA.
+
+## 6. Surveillance des Dépendances (Dependabot) et Hooks Local (pre-commit)
+
+- **Dependabot** :
+  Le fichier `.github/dependabot.yml` configure deux répertoires de surveillance hebdomadaires (`pip` pour `pyproject.toml` et `github-actions` pour les workflows). Dependabot ouvre automatiquement des PRs de mise à jour chaque semaine.
+  *Politique de fusion* : Aucune fusion automatique n'est activée. Chaque PR Dependabot doit être relue manuellement et valider l'ensemble du pipeline CI avant d'être fusionnée sur `main`.
+
+- **Pre-commit** :
+  Les hooks locaux configurés dans `.pre-commit-config.yaml` exécutent les nettoyages de fin de ligne, la validation TOML et le linter/formateur Ruff avant chaque commit local (`pre-commit run --all-files`). Les tests `pytest` ne sont pas inclus dans pre-commit pour garder les commits rapides; la validation complète des tests reste assurée par la CI.

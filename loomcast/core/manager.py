@@ -31,12 +31,18 @@ class LoomcastManager:
             RuntimeType.LMSTUDIO: LMStudioRuntime(base_url=self.config.lmstudio_url),
             RuntimeType.LLAMACPP: LlamaCppRuntime(base_url=self.config.llamacpp_url),
         }
-        self.catalog: CatalogPort = catalog if catalog is not None else DynamicCatalog(
-            cache=FileSystemCache(),
-            fallback_catalog=StaticCatalog(),
+        self.catalog: CatalogPort = (
+            catalog
+            if catalog is not None
+            else DynamicCatalog(
+                cache=FileSystemCache(),
+                fallback_catalog=StaticCatalog(),
+            )
         )
 
-    def _resolve_runtime_type(self, runtime_type: Optional[Union[RuntimeType, str]] = None) -> RuntimeType:
+    def _resolve_runtime_type(
+        self, runtime_type: Optional[Union[RuntimeType, str]] = None
+    ) -> RuntimeType:
         if runtime_type is None:
             return self.config.default_backend
         if isinstance(runtime_type, str):
@@ -46,7 +52,9 @@ class LoomcastManager:
                 raise LoomcastError(f"Unsupported runtime type: '{runtime_type}'")
         return runtime_type
 
-    def get_runtime(self, runtime_type: Optional[Union[RuntimeType, str]] = None) -> RuntimePort:
+    def get_runtime(
+        self, runtime_type: Optional[Union[RuntimeType, str]] = None
+    ) -> RuntimePort:
         """Get the specified or default runtime adapter instance."""
         target_type = self._resolve_runtime_type(runtime_type)
         return self.runtimes[target_type]
@@ -54,16 +62,19 @@ class LoomcastManager:
     def list_available_runtimes(self) -> Dict[RuntimeType, bool]:
         """Check availability status across all configured runtimes."""
         return {
-            rtype: adapter.is_available()
-            for rtype, adapter in self.runtimes.items()
+            rtype: adapter.is_available() for rtype, adapter in self.runtimes.items()
         }
 
-    def list_installed(self, runtime_type: Optional[Union[RuntimeType, str]] = None) -> List[str]:
+    def list_installed(
+        self, runtime_type: Optional[Union[RuntimeType, str]] = None
+    ) -> List[str]:
         """List installed model names for a specific runtime (or default backend)."""
         adapter = self.get_runtime(runtime_type)
         return adapter.list_installed()
 
-    def is_model_installed(self, model: str, runtime_type: Optional[Union[RuntimeType, str]] = None) -> bool:
+    def is_model_installed(
+        self, model: str, runtime_type: Optional[Union[RuntimeType, str]] = None
+    ) -> bool:
         """Check if a model is installed in the specified or default runtime."""
         adapter = self.get_runtime(runtime_type)
         return adapter.is_model_installed(model)
@@ -110,7 +121,8 @@ class LoomcastManager:
         all_matches = self.catalog.search(task)
         task_lower = task.lower()
         tag_matches = [
-            entry for entry in all_matches
+            entry
+            for entry in all_matches
             if any(task_lower in tag.lower() for tag in entry.tags)
         ]
         return tag_matches if tag_matches else all_matches
@@ -143,15 +155,18 @@ class LoomcastManager:
         failed: List[str] = []
 
         def _install_single(entry: CatalogEntry) -> str:
-            item_progress = progress.create_sub_reporter(entry.name) if progress is not None else None
+            item_progress = (
+                progress.create_sub_reporter(entry.name)
+                if progress is not None
+                else None
+            )
             self.install(entry.name, runtime_type=runtime_type, progress=item_progress)
             return entry.name
 
         effective_workers = max(1, max_concurrent)
         with ThreadPoolExecutor(max_workers=effective_workers) as executor:
             future_to_entry = {
-                executor.submit(_install_single, entry): entry
-                for entry in entries
+                executor.submit(_install_single, entry): entry for entry in entries
             }
 
             for future in as_completed(future_to_entry):
@@ -160,7 +175,9 @@ class LoomcastManager:
                     name = future.result()
                     installed.append(name)
                 except Exception as e:
-                    logger.warning(f"Failed to install model '{entry.name}' in category '{category}': {e}")
+                    logger.warning(
+                        f"Failed to install model '{entry.name}' in category '{category}': {e}"
+                    )
                     failed.append(entry.name)
 
         return installed, failed

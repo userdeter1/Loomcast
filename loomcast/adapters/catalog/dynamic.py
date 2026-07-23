@@ -5,6 +5,8 @@ from typing import List, Optional, Tuple
 
 import httpx
 
+from pydantic import ValidationError
+
 from loomcast.adapters.cache.store import FileSystemCache
 from loomcast.adapters.catalog.static import StaticCatalog
 from loomcast.common.logging import logger
@@ -13,6 +15,7 @@ from loomcast.ports.cache import CachePort
 from loomcast.ports.catalog import CatalogPort
 
 CACHE_SNAPSHOT_KEY = "catalog_dynamic_snapshot"
+MIN_CATALOG_ENTRIES = 5
 
 
 def _parse_library_html(html: str) -> List[CatalogEntry]:
@@ -25,9 +28,9 @@ def _parse_library_html(html: str) -> List[CatalogEntry]:
         r'<a\s+[^>]*href=["\']/library/([a-zA-Z0-9._-]+)["\'][^>]*>(.*?)</a>',
         re.DOTALL | re.IGNORECASE,
     )
-    desc_pattern = re.compile(r'<p[^>]*>(.*?)</p>', re.DOTALL | re.IGNORECASE)
-    tag_pattern = re.compile(r'<span[^>]*>(.*?)</span>', re.DOTALL | re.IGNORECASE)
-    strip_tags_pattern = re.compile(r'<[^>]+>')
+    desc_pattern = re.compile(r"<p[^>]*>(.*?)</p>", re.DOTALL | re.IGNORECASE)
+    tag_pattern = re.compile(r"<span[^>]*>(.*?)</span>", re.DOTALL | re.IGNORECASE)
+    strip_tags_pattern = re.compile(r"<[^>]+>")
 
     for match in card_pattern.finditer(html):
         name = match.group(1).lower()
@@ -55,15 +58,17 @@ def _parse_library_html(html: str) -> List[CatalogEntry]:
         if not tags:
             tags = ["ollama"]
 
-        entries.append(
-            CatalogEntry(
+        try:
+            entry = CatalogEntry(
                 name=name,
                 description=description,
                 publisher="ollama",
                 tags=tags,
                 default_runtime=RuntimeType.OLLAMA,
             )
-        )
+            entries.append(entry)
+        except ValidationError as ve:
+            raise ValueError(f"Invalid parsed entry '{name}': {ve}") from ve
 
     return entries
 
@@ -93,8 +98,10 @@ class DynamicCatalog(CatalogPort):
                 timestamp = data.get("timestamp", 0)
                 if (time.time() - timestamp) < (self.ttl_hours * 3600):
                     entries_data = data.get("entries", [])
-                    entries = [CatalogEntry.model_validate(item) for item in entries_data]
-                    if entries:
+                    entries = [
+                        CatalogEntry.model_validate(item) for item in entries_data
+                    ]
+                    if len(entries) >= MIN_CATALOG_ENTRIES:
                         return entries, False
             except Exception as e:
                 logger.warning(f"Failed to read dynamic catalog cache snapshot: {e}")
@@ -106,20 +113,32 @@ class DynamicCatalog(CatalogPort):
                 raise ValueError(f"HTTP error status code {response.status_code}")
             entries = _parse_library_html(response.text)
 
-            if not entries:
-                raise ValueError("No catalog entries parsed from HTML response")
+            # Minimum consistency validation: check threshold count and Pydantic validation
+            if len(entries) < MIN_CATALOG_ENTRIES:
+                raise ValueError(
+                    f"Parsed entries count ({len(entries)}) is below minimum threshold ({MIN_CATALOG_ENTRIES})"
+                )
+
+            for idx, entry in enumerate(entries):
+                try:
+                    CatalogEntry.model_validate(entry.model_dump())
+                except ValidationError as ve:
+                    raise ValueError(
+                        f"CatalogEntry validation failed at index {idx}: {ve}"
+                    ) from ve
 
             # Save snapshot to cache
             cache_payload = {
                 "timestamp": time.time(),
                 "entries": [e.model_dump() for e in entries],
             }
-            self.cache.put(CACHE_SNAPSHOT_KEY, json.dumps(cache_payload).encode("utf-8"))
+            self.cache.put(
+                CACHE_SNAPSHOT_KEY, json.dumps(cache_payload).encode("utf-8")
+            )
             return entries, False
         except Exception as e:
             logger.warning(
-                f"Failed to fetch dynamic catalog from Ollama library ({e}). "
-                "Falling back to static catalog."
+                f"Contenu scrapé invalide ou suspect, basculement sur le catalogue statique: {e}"
             )
             return None, True
 
@@ -133,7 +152,9 @@ class DynamicCatalog(CatalogPort):
         results: List[CatalogEntry] = []
         for entry in entries:
             name_match = query_lower in entry.name.lower()
-            desc_match = bool(entry.description and query_lower in entry.description.lower())
+            desc_match = bool(
+                entry.description and query_lower in entry.description.lower()
+            )
             tag_match = any(query_lower in tag.lower() for tag in entry.tags)
 
             if name_match or desc_match or tag_match:

@@ -33,7 +33,10 @@ def test_ollama_is_available_success(monkeypatch):
 
 def test_ollama_list_installed(monkeypatch):
     def mock_handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, json={"models": [{"name": "llama3:latest"}, {"name": "mistral:latest"}]})
+        return httpx.Response(
+            200,
+            json={"models": [{"name": "llama3:latest"}, {"name": "mistral:latest"}]},
+        )
 
     client = httpx.Client(transport=httpx.MockTransport(mock_handler))
     runtime = OllamaRuntime(base_url="http://localhost:11434")
@@ -50,7 +53,12 @@ def test_ollama_chat_success(monkeypatch):
         if request.url.path == "/api/tags":
             return httpx.Response(200, json={"models": []})
         if request.url.path == "/api/chat":
-            return httpx.Response(200, json={"message": {"role": "assistant", "content": "Hello from Ollama!"}})
+            return httpx.Response(
+                200,
+                json={
+                    "message": {"role": "assistant", "content": "Hello from Ollama!"}
+                },
+            )
         return httpx.Response(404)
 
     client = httpx.Client(transport=httpx.MockTransport(mock_handler))
@@ -66,7 +74,12 @@ def test_ollama_chat_success(monkeypatch):
 def test_lmstudio_is_available_success(monkeypatch):
     def mock_handler(request: httpx.Request) -> httpx.Response:
         if request.url.path == "/v1/models":
-            return httpx.Response(200, json={"data": [{"id": "lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF"}]})
+            return httpx.Response(
+                200,
+                json={
+                    "data": [{"id": "lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF"}]
+                },
+            )
         return httpx.Response(404)
 
     client = httpx.Client(transport=httpx.MockTransport(mock_handler))
@@ -74,7 +87,9 @@ def test_lmstudio_is_available_success(monkeypatch):
 
     monkeypatch.setattr("httpx.get", client.get)
     assert runtime.is_available() is True
-    assert runtime.list_installed() == ["lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF"]
+    assert runtime.list_installed() == [
+        "lmstudio-community/Meta-Llama-3-8B-Instruct-GGUF"
+    ]
 
 
 def test_lmstudio_chat_success(monkeypatch):
@@ -82,7 +97,10 @@ def test_lmstudio_chat_success(monkeypatch):
         if request.url.path == "/v1/models":
             return httpx.Response(200, json={"data": [{"id": "local-model"}]})
         if request.url.path == "/v1/chat/completions":
-            return httpx.Response(200, json={"choices": [{"message": {"content": "Hello from LM Studio!"}}]})
+            return httpx.Response(
+                200,
+                json={"choices": [{"message": {"content": "Hello from LM Studio!"}}]},
+            )
         return httpx.Response(404)
 
     client = httpx.Client(transport=httpx.MockTransport(mock_handler))
@@ -118,7 +136,9 @@ def test_llamacpp_is_available_and_models(monkeypatch):
         if request.url.path == "/health":
             return httpx.Response(200, json={"status": "ok"})
         if request.url.path == "/v1/models":
-            return httpx.Response(200, json={"data": [{"id": "llama-2-7b.Q4_K_M.gguf"}]})
+            return httpx.Response(
+                200, json={"data": [{"id": "llama-2-7b.Q4_K_M.gguf"}]}
+            )
         return httpx.Response(404)
 
     client = httpx.Client(transport=httpx.MockTransport(mock_handler))
@@ -136,7 +156,10 @@ def test_llamacpp_chat_success(monkeypatch):
         if request.url.path == "/health":
             return httpx.Response(200, json={"status": "ok"})
         if request.url.path == "/v1/chat/completions":
-            return httpx.Response(200, json={"choices": [{"message": {"content": "Hello from llama.cpp!"}}]})
+            return httpx.Response(
+                200,
+                json={"choices": [{"message": {"content": "Hello from llama.cpp!"}}]},
+            )
         return httpx.Response(404)
 
     client = httpx.Client(transport=httpx.MockTransport(mock_handler))
@@ -145,7 +168,9 @@ def test_llamacpp_chat_success(monkeypatch):
     monkeypatch.setattr("httpx.get", client.get)
     monkeypatch.setattr("httpx.post", client.post)
 
-    response = runtime.chat("llama-2-7b.Q4_K_M.gguf", [{"role": "user", "content": "Hi"}])
+    response = runtime.chat(
+        "llama-2-7b.Q4_K_M.gguf", [{"role": "user", "content": "Hi"}]
+    )
     assert response == "Hello from llama.cpp!"
 
 
@@ -166,4 +191,3 @@ def test_llamacpp_install_raises_explanatory_error(monkeypatch):
         runtime.install("unloaded-model")
 
     assert "llama-server" in str(exc_info.value)
-
