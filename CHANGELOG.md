@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `loomcast chat` crashed with a raw `MarkupError` traceback whenever a model's
+  response contained an unmatched closing bracket, e.g. `[/path]`. External text
+  was passed to rich as markup, so square brackets were interpreted as styling:
+  well-formed tags were silently stripped from the output and malformed ones
+  aborted the command. The same applied to catalog descriptions and tags from
+  `ollama.com`, model names from the runtime, and interpolated error messages.
+  All external text is now escaped, and chat responses render as literal text.
+
 ### Added
 - Model lifecycle management: `remove` and `update` commands and SDK functions.
 - `doctor` command running diagnostics across configuration, environment

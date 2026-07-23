@@ -318,3 +318,68 @@ def test_cli_doctor_static_catalog_checksum_failure(
     result = runner.invoke(app, ["doctor"])
     assert result.exit_code != 0
     assert "1 problem(s) found" in result.output
+
+
+# --- Rich markup safety -------------------------------------------------------
+# Model output, catalog descriptions and runtime model names are external data.
+# Rendering them as rich markup let a response containing an unmatched closing
+# tag (e.g. "[/path]") raise MarkupError and print a raw traceback.
+
+MARKUP_PAYLOAD = "see [/unmatched] and [bold red]styled[/bold red]"
+
+
+def test_cli_chat_renders_markup_in_response_literally(monkeypatch: pytest.MonkeyPatch):
+    class MockManager:
+        def chat(self, model, messages, runtime_type=None):
+            return MARKUP_PAYLOAD
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["chat", "m", "hi"])
+
+    assert result.exit_code == 0
+    assert result.exception is None
+    # The tags survive as text instead of being consumed as styling.
+    assert "[/unmatched]" in result.output
+    assert "[bold red]" in result.output
+
+
+def test_cli_search_survives_markup_in_catalog_description(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    class MockManager:
+        def search(self, query):
+            return [
+                CatalogEntry(
+                    name="evil-model",
+                    description=MARKUP_PAYLOAD,
+                    publisher="ollama",
+                    tags=["[/oops]"],
+                    default_runtime=RuntimeType.OLLAMA,
+                )
+            ]
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["search", "evil"])
+
+    assert result.exit_code == 0
+    assert result.exception is None
+    assert "evil-model" in result.output
+
+
+def test_cli_list_survives_markup_in_model_name(monkeypatch: pytest.MonkeyPatch):
+    class MockAdapter:
+        def is_available(self):
+            return True
+
+        def list_installed(self):
+            return ["weird[/name]:latest"]
+
+    class MockManager:
+        def get_runtime(self, rtype):
+            return MockAdapter()
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["list"])
+
+    assert result.exit_code == 0
+    assert result.exception is None
