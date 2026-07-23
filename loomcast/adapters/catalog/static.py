@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import hashlib
 import json
 from pathlib import Path
-from typing import List, Optional, Union
+
 from pydantic import ValidationError
 
 from loomcast.common.exceptions import CatalogIntegrityError, LoomcastError
@@ -12,15 +14,15 @@ from loomcast.ports.catalog import CatalogPort
 class StaticCatalog(CatalogPort):
     """CatalogPort implementation loading entries from an embedded JSON file."""
 
-    def __init__(self, catalog_path: Optional[Union[str, Path]] = None):
+    def __init__(self, catalog_path: str | Path | None = None):
         if catalog_path is None:
             self.catalog_path = Path(__file__).parent / "data" / "catalog.json"
         else:
             self.catalog_path = Path(catalog_path)
 
-        self._entries: List[CatalogEntry] = self._load_catalog()
+        self._entries: list[CatalogEntry] = self._load_catalog()
 
-    def _load_catalog(self) -> List[CatalogEntry]:
+    def _load_catalog(self) -> list[CatalogEntry]:
         if not self.catalog_path.is_file():
             raise LoomcastError(f"Catalog file not found at '{self.catalog_path}'.")
 
@@ -61,7 +63,7 @@ class StaticCatalog(CatalogPort):
                 f"Catalog JSON file '{self.catalog_path}' must contain a list of entries."
             )
 
-        entries: List[CatalogEntry] = []
+        entries: list[CatalogEntry] = []
         for idx, item in enumerate(data):
             try:
                 entry = CatalogEntry.model_validate(item)
@@ -73,10 +75,10 @@ class StaticCatalog(CatalogPort):
 
         return entries
 
-    def search(self, query: str) -> List[CatalogEntry]:
+    def search(self, query: str) -> list[CatalogEntry]:
         """Search catalog entries matching query in name, description, or tags (case-insensitive)."""
         query_lower = query.lower()
-        results: List[CatalogEntry] = []
+        results: list[CatalogEntry] = []
 
         for entry in self._entries:
             name_match = query_lower in entry.name.lower()
@@ -90,7 +92,7 @@ class StaticCatalog(CatalogPort):
 
         return results
 
-    def get_entry(self, name: str) -> Optional[CatalogEntry]:
+    def get_entry(self, name: str) -> CatalogEntry | None:
         """Retrieve exact catalog entry by name (case-insensitive comparison)."""
         name_lower = name.lower()
         for entry in self._entries:

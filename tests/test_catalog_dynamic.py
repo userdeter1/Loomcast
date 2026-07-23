@@ -1,6 +1,7 @@
 import json
 import time
 from pathlib import Path
+
 import httpx
 import pytest
 
@@ -13,7 +14,6 @@ from loomcast.adapters.catalog.dynamic import (
 from loomcast.adapters.catalog.static import StaticCatalog
 from loomcast.domain.entities import CatalogEntry, RuntimeType
 from loomcast.ports.catalog import CatalogPort
-
 
 SAMPLE_HTML = """
 <!DOCTYPE html>

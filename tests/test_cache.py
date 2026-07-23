@@ -1,6 +1,7 @@
 import hashlib
-import pytest
 from pathlib import Path
+
+import pytest
 
 from loomcast.adapters.cache.store import FileSystemCache
 from loomcast.common.exceptions import CacheError

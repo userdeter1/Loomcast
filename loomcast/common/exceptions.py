@@ -1,8 +1,6 @@
 class LoomcastError(Exception):
     """Base exception for all Loomcast errors."""
 
-    pass
-
 
 class RuntimeUnavailableError(LoomcastError):
     """Raised when a local LLM runtime (Ollama, LM Studio) is unreachable."""
@@ -27,22 +25,14 @@ class ModelNotFoundError(LoomcastError):
 class ConfigurationError(LoomcastError):
     """Raised when configuration loading or saving fails."""
 
-    pass
-
 
 class RuntimeExecutionError(LoomcastError):
     """Raised when a runtime execution or API call fails."""
-
-    pass
 
 
 class CacheError(LoomcastError):
     """Raised when cache operations fail due to I/O or permissions issues."""
 
-    pass
-
 
 class CatalogIntegrityError(LoomcastError):
     """Raised when catalog file integrity verification (SHA-256) fails."""
-
-    pass

@@ -1,4 +1,5 @@
-from typing import Any, Dict, List
+from typing import Any
+
 import httpx
 
 from loomcast.common.exceptions import RuntimeExecutionError
@@ -7,7 +8,7 @@ from loomcast.common.exceptions import RuntimeExecutionError
 def send_openai_compat_chat(
     base_url: str,
     model: str,
-    messages: List[Dict[str, Any]],
+    messages: list[dict[str, Any]],
     timeout: float,
     runtime_name: str = "OpenAI-compatible",
 ) -> str:

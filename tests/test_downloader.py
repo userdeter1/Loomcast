@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, call
+
 import httpx
 from rich.console import Console
 

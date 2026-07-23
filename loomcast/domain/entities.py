@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -19,7 +22,7 @@ class Model(BaseModel):
     size_bytes: Optional[int] = None
     modified_at: Optional[str] = None
     digest: Optional[str] = None
-    details: Dict[str, Any] = Field(default_factory=dict)
+    details: dict[str, Any] = Field(default_factory=dict)
 
 
 class CatalogEntry(BaseModel):
@@ -28,7 +31,7 @@ class CatalogEntry(BaseModel):
     name: str
     description: Optional[str] = None
     publisher: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
     default_runtime: Optional[RuntimeType] = None
 
 

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import hashlib
 from pathlib import Path
-from typing import Optional, Union
 
 from loomcast.common.exceptions import CacheError
 from loomcast.common.paths import get_cache_dir
@@ -10,7 +11,7 @@ from loomcast.ports.cache import CachePort
 class FileSystemCache(CachePort):
     """File system implementation of CachePort."""
 
-    def __init__(self, cache_dir: Optional[Union[str, Path]] = None):
+    def __init__(self, cache_dir: str | Path | None = None):
         if cache_dir is None:
             self.cache_dir = get_cache_dir()
         else:
@@ -26,7 +27,7 @@ class FileSystemCache(CachePort):
     def _get_path(self, key: str) -> Path:
         return self.cache_dir / key
 
-    def get(self, key: str) -> Optional[bytes]:
+    def get(self, key: str) -> bytes | None:
         """Retrieve cached bytes by key, returning None if non-existent."""
         path = self._get_path(key)
         if not path.is_file():

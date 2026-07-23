@@ -5,6 +5,7 @@
 # configurant un serveur local OpenAI-compatible ou LM Studio headless.
 
 import pytest
+
 from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
 
 pytestmark = pytest.mark.integration

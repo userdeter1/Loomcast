@@ -60,7 +60,9 @@ recs = loomcast.recommend("coding")
 installed, failed = loomcast.install_category("code", runtime_type="ollama")
 
 # Send chat messages
-response = loomcast.chat("llama3", [{"role": "user", "content": "Hello!"}], runtime_type="ollama")
+response = loomcast.chat(
+    "llama3", [{"role": "user", "content": "Hello!"}], runtime_type="ollama"
+)
 print(response)
 
 # Verify model integrity
