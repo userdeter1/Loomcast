@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from typing import Optional
 
 import typer
 from rich.console import Console
@@ -69,7 +70,7 @@ def status_cmd():
 
 @app.command("list")
 def list_cmd(
-    backend: str | None = typer.Option(
+    backend: Optional[str] = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
@@ -114,7 +115,7 @@ def list_cmd(
 @app.command("install")
 def install_cmd(
     model: str = typer.Argument(..., help="Model identifier to install/pull"),
-    backend: str | None = typer.Option(
+    backend: Optional[str] = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
@@ -135,7 +136,7 @@ def install_cmd(
 @app.command("update")
 def update_cmd(
     model: str = typer.Argument(..., help="Model identifier to update"),
-    backend: str | None = typer.Option(
+    backend: Optional[str] = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
@@ -161,7 +162,7 @@ def update_cmd(
 @app.command("remove")
 def remove_cmd(
     model: str = typer.Argument(..., help="Model identifier to remove/delete"),
-    backend: str | None = typer.Option(
+    backend: Optional[str] = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
@@ -186,7 +187,7 @@ def remove_cmd(
 def chat_cmd(
     model: str = typer.Argument(..., help="Model name to chat with"),
     prompt: str = typer.Argument(..., help="User prompt string"),
-    backend: str | None = typer.Option(
+    backend: Optional[str] = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
@@ -207,7 +208,7 @@ def chat_cmd(
 
 @app.command("config")
 def config_cmd(
-    set_default_backend: str | None = typer.Option(
+    set_default_backend: Optional[str] = typer.Option(
         None, "--set-default", help="Set default backend (ollama | lmstudio)"
     ),
     show: bool = typer.Option(
@@ -309,7 +310,7 @@ def recommend_cmd(
 @app.command("install-category")
 def install_category_cmd(
     category: str = typer.Argument(..., help="Category tag to batch install"),
-    backend: str | None = typer.Option(
+    backend: Optional[str] = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
     max_concurrent: int = typer.Option(
@@ -353,7 +354,7 @@ def install_category_cmd(
 @app.command("verify")
 def verify_cmd(
     model: str = typer.Argument(..., help="Model name to verify"),
-    backend: str | None = typer.Option(
+    backend: Optional[str] = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
