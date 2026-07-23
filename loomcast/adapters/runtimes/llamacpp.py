@@ -1,4 +1,7 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any
+
 import httpx
 
 from loomcast.adapters.downloader.progress import ProgressReporter
@@ -22,7 +25,7 @@ class LlamaCppRuntime(RuntimePort):
         except httpx.HTTPError:
             return False
 
-    def list_installed(self) -> List[str]:
+    def list_installed(self) -> list[str]:
         """List model currently loaded in llama-server.
 
         Note:
@@ -45,7 +48,7 @@ class LlamaCppRuntime(RuntimePort):
         installed = self.list_installed()
         return model in installed
 
-    def install(self, model: str, progress: Optional[ProgressReporter] = None) -> None:
+    def install(self, model: str, progress: ProgressReporter | None = None) -> None:
         """llama.cpp model installation directive.
 
         Note:
@@ -60,7 +63,7 @@ class LlamaCppRuntime(RuntimePort):
                 "Please launch llama-server with your desired model specified via command-line flags."
             )
 
-    def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
+    def chat(self, model: str, messages: list[dict[str, Any]]) -> str:
         """Send chat completion request to llama-server OpenAI-compatible endpoint."""
         if not self.is_available():
             raise RuntimeUnavailableError("llamacpp", self.base_url)
@@ -79,7 +82,7 @@ class LlamaCppRuntime(RuntimePort):
             "To change models, stop the llama-server process and restart it with a different model."
         )
 
-    def update(self, model: str, progress: Optional[ProgressReporter] = None) -> bool:
+    def update(self, model: str, progress: ProgressReporter | None = None) -> bool:
         """llama.cpp model update directive."""
         if not self.is_available():
             raise RuntimeUnavailableError("llamacpp", self.base_url)

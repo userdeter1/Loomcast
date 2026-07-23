@@ -1,4 +1,5 @@
-from typing import Any, Dict, List
+from typing import Any
+
 from loomcast.ports.cache import CachePort
 from loomcast.ports.catalog import CatalogPort
 from loomcast.ports.runtime import RuntimePort
@@ -21,10 +22,10 @@ class DummyRuntimeAdapter:
         if model not in self._installed:
             self._installed.append(model)
 
-    def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
+    def chat(self, model: str, messages: list[dict[str, Any]]) -> str:
         return f"Response to {messages[-1]['content']} from {model}"
 
-    def list_installed(self) -> List[str]:
+    def list_installed(self) -> list[str]:
         return list(self._installed)
 
     def remove(self, model: str) -> None:

@@ -6,8 +6,8 @@ from loomcast.adapters.downloader.progress import (
 )
 
 __all__ = [
+    "NullProgressReporter",
     "ProgressReporter",
     "RichProgressReporter",
-    "NullProgressReporter",
     "SubProgressReporter",
 ]

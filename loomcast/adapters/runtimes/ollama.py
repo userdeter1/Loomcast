@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 import httpx
 
 from loomcast.adapters.downloader.progress import ProgressReporter
@@ -26,7 +29,7 @@ class OllamaRuntime(RuntimePort):
         except httpx.HTTPError:
             return False
 
-    def list_installed_with_metadata(self) -> List[Dict[str, Any]]:
+    def list_installed_with_metadata(self) -> list[dict[str, Any]]:
         """List all installed Ollama models with full metadata dictionaries."""
         if not self.is_available():
             raise RuntimeUnavailableError("ollama", self.base_url)
@@ -40,12 +43,12 @@ class OllamaRuntime(RuntimePort):
                 f"Failed to list Ollama models metadata: {e}"
             ) from e
 
-    def list_installed(self) -> List[str]:
+    def list_installed(self) -> list[str]:
         """List all installed Ollama models."""
         models = self.list_installed_with_metadata()
         return [m["name"] for m in models if "name" in m]
 
-    def get_model_digest(self, model: str) -> Optional[str]:
+    def get_model_digest(self, model: str) -> str | None:
         """Retrieve the digest string for a specific installed model."""
         models = self.list_installed_with_metadata()
         for m in models:
@@ -60,11 +63,9 @@ class OllamaRuntime(RuntimePort):
         if model in installed:
             return True
         # Check tag variations, e.g. "llama3" vs "llama3:latest"
-        if f"{model}:latest" in installed:
-            return True
-        return False
+        return f"{model}:latest" in installed
 
-    def install(self, model: str, progress: Optional[ProgressReporter] = None) -> None:
+    def install(self, model: str, progress: ProgressReporter | None = None) -> None:
         """Pull a model via Ollama API."""
         if not self.is_available():
             raise RuntimeUnavailableError("ollama", self.base_url)
@@ -107,7 +108,7 @@ class OllamaRuntime(RuntimePort):
                     f"Failed to install Ollama model '{model}': {e}"
                 ) from e
 
-    def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
+    def chat(self, model: str, messages: list[dict[str, Any]]) -> str:
         """Send chat messages to Ollama native API."""
         if not self.is_available():
             raise RuntimeUnavailableError("ollama", self.base_url)
@@ -151,7 +152,7 @@ class OllamaRuntime(RuntimePort):
                 f"Failed to remove Ollama model '{model}': {e}"
             ) from e
 
-    def update(self, model: str, progress: Optional[ProgressReporter] = None) -> bool:
+    def update(self, model: str, progress: ProgressReporter | None = None) -> bool:
         """Update an installed Ollama model and return True if digest changed."""
         if not self.is_available():
             raise RuntimeUnavailableError("ollama", self.base_url)

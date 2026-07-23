@@ -1,4 +1,7 @@
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any
+
 import httpx
 
 from loomcast.adapters.downloader.progress import ProgressReporter
@@ -22,7 +25,7 @@ class LMStudioRuntime(RuntimePort):
         except httpx.HTTPError:
             return False
 
-    def list_installed(self) -> List[str]:
+    def list_installed(self) -> list[str]:
         """List all loaded/available models in LM Studio."""
         if not self.is_available():
             raise RuntimeUnavailableError("lmstudio", self.base_url)
@@ -40,7 +43,7 @@ class LMStudioRuntime(RuntimePort):
         installed = self.list_installed()
         return model in installed
 
-    def install(self, model: str, progress: Optional[ProgressReporter] = None) -> None:
+    def install(self, model: str, progress: ProgressReporter | None = None) -> None:
         """LM Studio model installation directive.
 
         Note:
@@ -58,7 +61,7 @@ class LMStudioRuntime(RuntimePort):
                 "Please search and load the model within the LM Studio interface."
             )
 
-    def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
+    def chat(self, model: str, messages: list[dict[str, Any]]) -> str:
         """Send chat completion request to LM Studio OpenAI-compatible endpoint."""
         if not self.is_available():
             raise RuntimeUnavailableError("lmstudio", self.base_url)
@@ -77,7 +80,7 @@ class LMStudioRuntime(RuntimePort):
             f"Please remove '{model}' manually within the LM Studio interface."
         )
 
-    def update(self, model: str, progress: Optional[ProgressReporter] = None) -> bool:
+    def update(self, model: str, progress: ProgressReporter | None = None) -> bool:
         """LM Studio model update directive."""
         if not self.is_available():
             raise RuntimeUnavailableError("lmstudio", self.base_url)

@@ -1,17 +1,13 @@
-import sys
-from typing import Optional
+from __future__ import annotations
 
-if sys.version_info >= (3, 8):
-    from typing import Protocol, runtime_checkable
-else:
-    from typing_extensions import Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 
 @runtime_checkable
 class CachePort(Protocol):
     """Abstract port for content-addressed cache storage."""
 
-    def get(self, key: str) -> Optional[bytes]:
+    def get(self, key: str) -> bytes | None:
         """Retrieve cached bytes by key."""
         ...
 

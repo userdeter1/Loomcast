@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import os
-from pathlib import Path
 import sys
-from typing import Any, Dict, Optional, Set
+from pathlib import Path
+from typing import Any
 
 # Standard library TOML support (Python 3.11+) or fallback (Python < 3.11)
 if sys.version_info >= (3, 11):
@@ -26,11 +28,11 @@ class LoomcastConfig(BaseModel):
     lmstudio_url: str = Field(default="http://localhost:1234")
     llamacpp_url: str = Field(default="http://localhost:8080")
 
-    _file_data: Dict[str, Any] = PrivateAttr(default_factory=dict)
-    _env_keys: Set[str] = PrivateAttr(default_factory=set)
+    _file_data: dict[str, Any] = PrivateAttr(default_factory=dict)
+    _env_keys: set[str] = PrivateAttr(default_factory=set)
 
     @classmethod
-    def load(cls, config_path: Optional[Path] = None) -> "LoomcastConfig":
+    def load(cls, config_path: Path | None = None) -> LoomcastConfig:
         """Load configuration from TOML file or return defaults, applying environment variable overrides."""
         path = config_path or get_config_file_path()
         if not path.exists():
@@ -75,7 +77,7 @@ class LoomcastConfig(BaseModel):
 
         return config
 
-    def save(self, config_path: Optional[Path] = None) -> None:
+    def save(self, config_path: Path | None = None) -> None:
         """Save configuration to TOML file without persisting environment variable overrides."""
         path = config_path or get_config_file_path()
         path.parent.mkdir(parents=True, exist_ok=True)

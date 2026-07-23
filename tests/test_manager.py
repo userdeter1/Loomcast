@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import threading
 import time
-from typing import Any, Optional
+from typing import Any
 
 from loomcast.common.config import LoomcastConfig
 from loomcast.common.exceptions import RuntimeExecutionError
@@ -77,7 +79,7 @@ class PartialFailureRuntimeAdapter(RuntimePort):
     def is_model_installed(self, model: str) -> bool:
         return model in self.installed
 
-    def install(self, model: str, progress: Optional[Any] = None) -> None:
+    def install(self, model: str, progress: Any | None = None) -> None:
         if "deepseek" in model:
             raise RuntimeExecutionError(f"Simulated failure for {model}")
         self.installed.append(model)
@@ -102,11 +104,10 @@ class ConcurrencyTrackingRuntimeAdapter(RuntimePort):
     def is_model_installed(self, model: str) -> bool:
         return model in self.installed
 
-    def install(self, model: str, progress: Optional[Any] = None) -> None:
+    def install(self, model: str, progress: Any | None = None) -> None:
         with self.lock:
             self.active_count += 1
-            if self.active_count > self.max_active_observed:
-                self.max_active_observed = self.active_count
+            self.max_active_observed = max(self.max_active_observed, self.active_count)
 
         time.sleep(0.05)
 
@@ -235,7 +236,7 @@ def test_manager_remove_resolve_runtime():
         def is_model_installed(self, model: str) -> bool:
             return True
 
-        def install(self, model: str, progress: Optional[Any] = None) -> None:
+        def install(self, model: str, progress: Any | None = None) -> None:
             pass
 
         def chat(self, model: str, messages: list) -> str:
@@ -265,7 +266,7 @@ def test_manager_update_resolve_runtime():
         def is_model_installed(self, model: str) -> bool:
             return True
 
-        def install(self, model: str, progress: Optional[Any] = None) -> None:
+        def install(self, model: str, progress: Any | None = None) -> None:
             pass
 
         def chat(self, model: str, messages: list) -> str:
@@ -277,7 +278,7 @@ def test_manager_update_resolve_runtime():
         def remove(self, model: str) -> None:
             pass
 
-        def update(self, model: str, progress: Optional[Any] = None) -> bool:
+        def update(self, model: str, progress: Any | None = None) -> bool:
             updated_calls.append(model)
             return True
 

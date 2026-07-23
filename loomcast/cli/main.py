@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from typing import Optional
+
 import typer
 from rich.console import Console
 from rich.panel import Panel
@@ -14,7 +16,6 @@ from loomcast.common.paths import get_config_file_path
 from loomcast.core.manager import LoomcastManager
 from loomcast.domain.entities import RuntimeType
 
-
 app = typer.Typer(
     name="loomcast",
     help="Loomcast: Multi-runtime Local LLM Manager (Ollama, LM Studio)",
@@ -27,7 +28,7 @@ def get_manager() -> LoomcastManager:
     try:
         config = LoomcastConfig.load()
         return LoomcastManager(config=config)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         console.print(f"[bold red]Configuration error:[/bold red] {e}")
         raise typer.Exit(code=1)
 
@@ -68,7 +69,7 @@ def status_cmd():
 
 @app.command("list")
 def list_cmd(
-    backend: Optional[str] = typer.Option(
+    backend: str | None = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
@@ -113,7 +114,7 @@ def list_cmd(
 @app.command("install")
 def install_cmd(
     model: str = typer.Argument(..., help="Model identifier to install/pull"),
-    backend: Optional[str] = typer.Option(
+    backend: str | None = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
@@ -134,7 +135,7 @@ def install_cmd(
 @app.command("update")
 def update_cmd(
     model: str = typer.Argument(..., help="Model identifier to update"),
-    backend: Optional[str] = typer.Option(
+    backend: str | None = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
@@ -160,15 +161,16 @@ def update_cmd(
 @app.command("remove")
 def remove_cmd(
     model: str = typer.Argument(..., help="Model identifier to remove/delete"),
-    backend: Optional[str] = typer.Option(
+    backend: str | None = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ):
     """Remove an installed model from the target runtime."""
-    if not yes:
-        if not typer.confirm(f"Supprimer {model} ? Cette action est irréversible."):
-            raise typer.Abort()
+    if not yes and not typer.confirm(
+        f"Supprimer {model} ? Cette action est irréversible."
+    ):
+        raise typer.Abort()
     manager = get_manager()
     try:
         manager.remove(model, runtime_type=backend)
@@ -184,7 +186,7 @@ def remove_cmd(
 def chat_cmd(
     model: str = typer.Argument(..., help="Model name to chat with"),
     prompt: str = typer.Argument(..., help="User prompt string"),
-    backend: Optional[str] = typer.Option(
+    backend: str | None = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
@@ -205,7 +207,7 @@ def chat_cmd(
 
 @app.command("config")
 def config_cmd(
-    set_default_backend: Optional[str] = typer.Option(
+    set_default_backend: str | None = typer.Option(
         None, "--set-default", help="Set default backend (ollama | lmstudio)"
     ),
     show: bool = typer.Option(
@@ -307,7 +309,7 @@ def recommend_cmd(
 @app.command("install-category")
 def install_category_cmd(
     category: str = typer.Argument(..., help="Category tag to batch install"),
-    backend: Optional[str] = typer.Option(
+    backend: str | None = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
     max_concurrent: int = typer.Option(
@@ -351,7 +353,7 @@ def install_category_cmd(
 @app.command("verify")
 def verify_cmd(
     model: str = typer.Argument(..., help="Model name to verify"),
-    backend: Optional[str] = typer.Option(
+    backend: str | None = typer.Option(
         None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
     ),
 ):
@@ -396,7 +398,7 @@ def doctor_cmd():
         console.print(
             f"[bold green]✓[/bold green] Configuration : Chargée avec succès depuis [cyan]{config_path}[/cyan]"
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         problems += 1
         console.print(
             f"[bold red]✗[/bold red] Configuration : Échec du chargement ({e})"
@@ -444,7 +446,7 @@ def doctor_cmd():
     # 4. Catalog accessibility
     catalog = manager.catalog
     if isinstance(catalog, DynamicCatalog):
-        entries, is_fallback = catalog._get_entries()
+        _entries, is_fallback = catalog._get_entries()
         if is_fallback:
             try:
                 fb_entries = catalog.fallback_catalog.search("")
@@ -458,7 +460,7 @@ def doctor_cmd():
                     console.print(
                         "[bold red]✗[/bold red] Catalogue : Catalogue dynamique et catalogue statique de secours sont indisponibles"
                     )
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 problems += 1
                 console.print(
                     f"[bold red]✗[/bold red] Catalogue : Échec du catalogue statique de secours ({e})"
@@ -471,7 +473,7 @@ def doctor_cmd():
         try:
             catalog.search("")
             console.print("[bold green]✓[/bold green] Catalogue : Catalogue accessible")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             problems += 1
             console.print(
                 f"[bold red]✗[/bold red] Catalogue : Erreur d'accès au catalogue ({e})"
@@ -488,7 +490,7 @@ def doctor_cmd():
         console.print(
             f"[bold red]✗[/bold red] Intégrité du catalogue statique : Problème de checksum SHA-256 ({e})"
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         problems += 1
         console.print(
             f"[bold red]✗[/bold red] Intégrité du catalogue statique : Erreur ({e})"

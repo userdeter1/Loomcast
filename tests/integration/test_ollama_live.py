@@ -5,6 +5,7 @@
 # qui installe et démarre le démon Ollama dans le runner (ex: `curl -fsSL https://ollama.com/install.sh | sh`).
 
 import pytest
+
 from loomcast.adapters.runtimes.ollama import OllamaRuntime
 
 pytestmark = pytest.mark.integration

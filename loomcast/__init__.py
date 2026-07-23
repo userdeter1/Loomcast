@@ -1,10 +1,13 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Any
 
 from loomcast.adapters.downloader.progress import (
     NullProgressReporter,
     ProgressReporter,
     RichProgressReporter,
 )
+from loomcast.adapters.runtimes import LlamaCppRuntime
 from loomcast.common.config import LoomcastConfig
 from loomcast.common.exceptions import (
     CacheError,
@@ -15,7 +18,6 @@ from loomcast.common.exceptions import (
     RuntimeExecutionError,
     RuntimeUnavailableError,
 )
-from loomcast.adapters.runtimes import LlamaCppRuntime
 from loomcast.core.manager import LoomcastManager
 from loomcast.domain.entities import (
     CatalogEntry,
@@ -25,12 +27,11 @@ from loomcast.domain.entities import (
     VerificationResult,
 )
 
-
-_default_manager: Optional[LoomcastManager] = None
+_default_manager: LoomcastManager | None = None
 
 
 def get_manager(
-    config: Optional[LoomcastConfig] = None,
+    config: LoomcastConfig | None = None,
     refresh: bool = False,
 ) -> LoomcastManager:
     """Get or create global default LoomcastManager instance."""
@@ -40,22 +41,22 @@ def get_manager(
     return _default_manager
 
 
-def search(query: str) -> List[CatalogEntry]:
+def search(query: str) -> list[CatalogEntry]:
     """Search model catalog by query string."""
     return get_manager().search(query)
 
 
-def recommend(task: str) -> List[CatalogEntry]:
+def recommend(task: str) -> list[CatalogEntry]:
     """Recommend model catalog entries matching a task or tag."""
     return get_manager().recommend(task)
 
 
 def install_category(
     category: str,
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
+    runtime_type: RuntimeType | str | None = None,
     max_concurrent: int = 3,
-    progress: Optional[ProgressReporter] = None,
-) -> Tuple[List[str], List[str]]:
+    progress: ProgressReporter | None = None,
+) -> tuple[list[str], list[str]]:
     """Batch install all models in a category."""
     reporter = progress if progress is not None else NullProgressReporter()
     return get_manager().install_category(
@@ -68,7 +69,7 @@ def install_category(
 
 def verify(
     model: str,
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
+    runtime_type: RuntimeType | str | None = None,
 ) -> VerificationResult:
     """Verify installed model integrity."""
     return get_manager().verify(model, runtime_type=runtime_type)
@@ -76,8 +77,8 @@ def verify(
 
 def chat(
     model: str,
-    messages: List[Dict[str, Any]],
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
+    messages: list[dict[str, Any]],
+    runtime_type: RuntimeType | str | None = None,
 ) -> str:
     """Send chat messages to a local LLM model."""
     return get_manager().chat(model, messages, runtime_type=runtime_type)
@@ -85,8 +86,8 @@ def chat(
 
 def install(
     model: str,
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
-    progress: Optional[ProgressReporter] = None,
+    runtime_type: RuntimeType | str | None = None,
+    progress: ProgressReporter | None = None,
 ) -> None:
     """Install a model into the local runtime."""
     reporter = progress if progress is not None else NullProgressReporter()
@@ -95,7 +96,7 @@ def install(
 
 def remove(
     model: str,
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
+    runtime_type: RuntimeType | str | None = None,
 ) -> None:
     """Remove/uninstall an installed model from the local runtime."""
     get_manager().remove(model, runtime_type=runtime_type)
@@ -103,8 +104,8 @@ def remove(
 
 def update(
     model: str,
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
-    progress: Optional[ProgressReporter] = None,
+    runtime_type: RuntimeType | str | None = None,
+    progress: ProgressReporter | None = None,
 ) -> bool:
     """Update an installed model in the local runtime."""
     reporter = progress if progress is not None else NullProgressReporter()
@@ -112,48 +113,48 @@ def update(
 
 
 def list_installed(
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
-) -> List[str]:
+    runtime_type: RuntimeType | str | None = None,
+) -> list[str]:
     """List installed models in the local runtime."""
     return get_manager().list_installed(runtime_type=runtime_type)
 
 
 def is_model_installed(
     model: str,
-    runtime_type: Optional[Union[RuntimeType, str]] = None,
+    runtime_type: RuntimeType | str | None = None,
 ) -> bool:
     """Check if a model is installed in the local runtime."""
     return get_manager().is_model_installed(model, runtime_type=runtime_type)
 
 
 __all__ = [
-    "LoomcastManager",
-    "get_manager",
-    "search",
-    "recommend",
-    "install_category",
-    "verify",
-    "chat",
-    "install",
-    "remove",
-    "update",
-    "list_installed",
-    "is_model_installed",
-    "ProgressReporter",
-    "RichProgressReporter",
-    "NullProgressReporter",
+    "CacheError",
+    "CatalogEntry",
+    "CatalogIntegrityError",
+    "ChatMessage",
+    "ConfigurationError",
     "LlamaCppRuntime",
     "LoomcastConfig",
     "LoomcastError",
-    "CatalogIntegrityError",
-    "RuntimeUnavailableError",
-    "ModelNotFoundError",
-    "ConfigurationError",
-    "RuntimeExecutionError",
-    "CacheError",
-    "RuntimeType",
+    "LoomcastManager",
     "Model",
-    "CatalogEntry",
-    "ChatMessage",
+    "ModelNotFoundError",
+    "NullProgressReporter",
+    "ProgressReporter",
+    "RichProgressReporter",
+    "RuntimeExecutionError",
+    "RuntimeType",
+    "RuntimeUnavailableError",
     "VerificationResult",
+    "chat",
+    "get_manager",
+    "install",
+    "install_category",
+    "is_model_installed",
+    "list_installed",
+    "recommend",
+    "remove",
+    "search",
+    "update",
+    "verify",
 ]

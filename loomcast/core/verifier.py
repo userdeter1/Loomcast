@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from __future__ import annotations
 
 from loomcast.common.exceptions import ModelNotFoundError
 from loomcast.domain.entities import RuntimeType, VerificationResult
@@ -8,7 +8,7 @@ from loomcast.ports.runtime import RuntimePort
 class ModelVerifier:
     """Service for verifying installed model integrity across local runtimes."""
 
-    def __init__(self, runtimes: Dict[RuntimeType, RuntimePort]):
+    def __init__(self, runtimes: dict[RuntimeType, RuntimePort]):
         self.runtimes = runtimes
 
     def verify(self, model: str, runtime_type: RuntimeType) -> VerificationResult:
@@ -23,7 +23,7 @@ class ModelVerifier:
             raise ModelNotFoundError(model_name=model, runtime_name=runtime_type.value)
 
         if runtime_type == RuntimeType.OLLAMA:
-            digest: Optional[str] = None
+            digest: str | None = None
             if hasattr(adapter, "get_model_digest"):
                 digest = adapter.get_model_digest(model)
 

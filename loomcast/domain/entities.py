@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -16,20 +19,20 @@ class Model(BaseModel):
 
     name: str
     runtime_type: RuntimeType
-    size_bytes: Optional[int] = None
-    modified_at: Optional[str] = None
-    digest: Optional[str] = None
-    details: Dict[str, Any] = Field(default_factory=dict)
+    size_bytes: int | None = None
+    modified_at: str | None = None
+    digest: str | None = None
+    details: dict[str, Any] = Field(default_factory=dict)
 
 
 class CatalogEntry(BaseModel):
     """Pure domain entity representing a model catalog entry."""
 
     name: str
-    description: Optional[str] = None
-    publisher: Optional[str] = None
-    tags: List[str] = Field(default_factory=list)
-    default_runtime: Optional[RuntimeType] = None
+    description: str | None = None
+    publisher: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    default_runtime: RuntimeType | None = None
 
 
 class ChatMessage(BaseModel):
@@ -45,5 +48,5 @@ class VerificationResult(BaseModel):
     model: str
     runtime_type: RuntimeType
     verified: bool
-    digest: Optional[str] = None
+    digest: str | None = None
     message: str

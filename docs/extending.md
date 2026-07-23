@@ -14,6 +14,7 @@ Voici la définition du protocole Python :
 from typing import Any, Dict, List, Optional
 from typing_extensions import Protocol, runtime_checkable
 
+
 @runtime_checkable
 class RuntimePort(Protocol):
     """Abstract port definition for local LLM runtime interactions."""
@@ -52,6 +53,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
 from loomcast.ports.runtime import RuntimePort
+
 
 class CustomRuntime(RuntimePort):
     def __init__(self, base_url: str = "http://localhost:5000", timeout: float = 30.0):
