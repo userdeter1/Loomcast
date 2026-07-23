@@ -1,4 +1,5 @@
 import json
+import re
 import time
 from pathlib import Path
 
@@ -15,37 +16,58 @@ from loomcast.adapters.catalog.static import StaticCatalog
 from loomcast.domain.entities import CatalogEntry, RuntimeType
 from loomcast.ports.catalog import CatalogPort
 
-SAMPLE_HTML = """
+
+def _card(name: str, description: str, pills: str) -> str:
+    """Build a library card mirroring the real ollama.com/library markup.
+
+    Every card carries a title <span>, tag "pill" <span>s, and a stats footer
+    whose <span>s hold pull counts, tag counts and an update date. Only the
+    pills are real tags -- the parser must ignore the rest.
+    """
+    return f"""
+  <a href="/library/{name}" class="group w-full space-y-5">
+    <div title="{name}" class="flex flex-col">
+      <h2 class="truncate text-xl font-medium">
+        <div class="flex space-x-2 items-center">
+          <span class="group-hover:underline truncate">{name}</span>
+        </div>
+      </h2>
+      <p class="max-w-lg break-words text-neutral-800 text-md">{description}</p>
+    </div>
+    <div class="flex flex-col space-y-2">
+      <div class="flex flex-wrap space-x-2">{pills}</div>
+      <p class="my-4 flex space-x-5 text-[13px] font-medium text-neutral-500">
+        <span class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="mr-1.5 h-4 w-4"><path d="M3 16.5v2.25"></path></svg>
+          <span>117.6M</span>&nbsp;Pulls
+        </span>
+        <span class="flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="mr-1.5 h-4 w-4"><path d="M7 7h.01"></path></svg>
+          <span>93</span>&nbsp;Tags
+        </span>
+        <span class="flex items-center">Updated&nbsp;<span>1 year ago</span></span>
+      </p>
+    </div>
+  </a>"""
+
+
+def _pill(text: str) -> str:
+    return (
+        '<span class="inline-flex items-center rounded-md bg-[#ddf4ff] px-2 py-0.5 '
+        f'text-xs font-medium text-blue-600 sm:text-[13px]">{text}</span>'
+    )
+
+
+SAMPLE_HTML = f"""
 <!DOCTYPE html>
 <html>
 <body>
 <div id="repo">
-  <a href="/library/llama3" class="group">
-    <h2>llama3</h2>
-    <p>Meta's state-of-the-art model for reasoning</p>
-    <span>8B</span>
-    <span>70B</span>
-  </a>
-  <a href="/library/deepseek-coder" class="group">
-    <h2>deepseek-coder</h2>
-    <p>DeepSeek Coder open-source code language model</p>
-    <span>code</span>
-  </a>
-  <a href="/library/mistral" class="group">
-    <h2>mistral</h2>
-    <p>7B model by Mistral AI</p>
-    <span>general</span>
-  </a>
-  <a href="/library/phi3" class="group">
-    <h2>phi3</h2>
-    <p>Microsoft lightweight model</p>
-    <span>mini</span>
-  </a>
-  <a href="/library/gemma" class="group">
-    <h2>gemma</h2>
-    <p>Google open weight model</p>
-    <span>google</span>
-  </a>
+{_card("llama3", "Meta's state-of-the-art model for reasoning", _pill("tools") + _pill("8b") + _pill("70b"))}
+{_card("deepseek-coder", "DeepSeek Coder open-source code language model", _pill("code"))}
+{_card("nemotron", "Enterprise-grade Q&amp;A, summarization &amp; transcription", _pill("vision"))}
+{_card("openchat", "A family of open-source models. Updated to version 3.5-0106.", _pill("7b"))}
+{_card("untagged-model", "A model published without any tag pill", "")}
 </div>
 </body>
 </html>
@@ -86,7 +108,7 @@ def test_parse_library_html():
     llama = entries[0]
     assert llama.name == "llama3"
     assert llama.description == "Meta's state-of-the-art model for reasoning"
-    assert "8B" in llama.tags
+    assert llama.tags == ["tools", "8b", "70b"]
     assert llama.publisher == "ollama"
     assert llama.default_runtime == RuntimeType.OLLAMA
 
@@ -94,6 +116,44 @@ def test_parse_library_html():
     assert coder.name == "deepseek-coder"
     assert coder.description == "DeepSeek Coder open-source code language model"
     assert "code" in coder.tags
+
+
+def test_parse_library_html_excludes_listing_chrome():
+    """Pull counts, tag counts and update dates must never become tags."""
+    entries = _parse_library_html(SAMPLE_HTML)
+
+    for entry in entries:
+        for tag in entry.tags:
+            assert "nbsp" not in tag, f"undecoded HTML entity in {entry.name}: {tag!r}"
+            assert tag.lower() not in {"pulls", "tags", "updated"}
+            assert not re.fullmatch(r"[\d.,]+[KMB]", tag), f"pull counter: {tag!r}"
+            assert not tag.endswith(" ago"), f"update date: {tag!r}"
+        # The card title is not a tag either.
+        assert entry.name not in entry.tags
+
+
+def test_parse_library_html_decodes_entities():
+    """HTML entities are decoded rather than leaked verbatim."""
+    entry = next(e for e in _parse_library_html(SAMPLE_HTML) if e.name == "nemotron")
+    assert entry.description == "Enterprise-grade Q&A, summarization & transcription"
+
+
+def test_parse_library_html_keeps_descriptions_mentioning_chrome_words():
+    """A description is not chrome just because it says "Updated"."""
+    entry = next(e for e in _parse_library_html(SAMPLE_HTML) if e.name == "openchat")
+    assert entry.description == (
+        "A family of open-source models. Updated to version 3.5-0106."
+    )
+    assert entry.tags == ["7b"]
+
+
+def test_parse_library_html_untagged_model_falls_back():
+    """A card with no tag pill still yields a usable entry."""
+    entry = next(
+        e for e in _parse_library_html(SAMPLE_HTML) if e.name == "untagged-model"
+    )
+    assert entry.tags == ["ollama"]
+    assert entry.description == "A model published without any tag pill"
 
 
 def test_valid_cache_prevents_network_request(

@@ -39,10 +39,16 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "pytest-mock>=3.10.0",
-    "ruff>=0.1.0",
+    "ruff==0.16.0",
     "build>=1.0.0",
     "pre-commit>=3.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/userdeter1/Loomcast"
+Repository = "https://github.com/userdeter1/Loomcast"
+Issues = "https://github.com/userdeter1/Loomcast/issues"
+Changelog = "https://github.com/userdeter1/Loomcast/blob/main/CHANGELOG.md"
 
 [project.scripts]
 loomcast = "loomcast.cli.main:app"
@@ -79,6 +85,14 @@ show_missing = true
 
 [tool.ruff]
 target-version = "py39"
+line-length = 88
 
 [tool.ruff.lint]
+# `select` must stay explicit: with only `ignore` set, ruff falls back to its
+# built-in default rule set, which changes between releases. That is what broke
+# CI when ruff 0.16.0 shipped a wider default than the 0.15.x used locally.
+# Ruff's historical defaults, plus import sorting (I) and pycodestyle warnings (W).
+# E501 is intentionally omitted: ruff-format owns line wrapping and cannot split
+# long string literals, so E501 would only flag lines it will not fix.
+select = ["E4", "E7", "E9", "F", "I", "W"]
 ignore = ["UP045"]

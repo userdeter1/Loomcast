@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html as html_lib
 import json
 import re
 import time
@@ -14,23 +15,59 @@ from loomcast.domain.entities import CatalogEntry, RuntimeType
 from loomcast.ports.cache import CachePort
 from loomcast.ports.catalog import CatalogPort
 
-CACHE_SNAPSHOT_KEY = "catalog_dynamic_snapshot"
+# Bumped to _v2 so snapshots written before the tag-parsing fix (which stored
+# pull counters and undecoded entities as tags) are ignored rather than served
+# from cache for up to ttl_hours after upgrading.
+CACHE_SNAPSHOT_KEY = "catalog_dynamic_snapshot_v2"
 MIN_CATALOG_ENTRIES = 5
+MAX_TAG_LENGTH = 30
+
+# Pattern matches <a href="/library/<model_name>">...</a>
+card_pattern = re.compile(
+    r'<a\s+[^>]*href=["\']/library/([a-zA-Z0-9._-]+)["\'][^>]*>(.*?)</a>',
+    re.DOTALL | re.IGNORECASE,
+)
+desc_pattern = re.compile(r"<p[^>]*>(.*?)</p>", re.DOTALL | re.IGNORECASE)
+# Only tag "pills" carry the rounded-md class. A bare <span> match would also
+# pick up the card title and the pull-count/updated-at footer.
+tag_pattern = re.compile(
+    r'<span[^>]*class=["\'][^"\']*rounded-md[^"\']*["\'][^>]*>(.*?)</span>',
+    re.DOTALL | re.IGNORECASE,
+)
+strip_tags_pattern = re.compile(r"<[^>]+>")
+svg_pattern = re.compile(r"<svg\b", re.IGNORECASE)
+whitespace_pattern = re.compile(r"\s+")
+# Case-sensitive on purpose: "117.6M" is a pull counter, "405b" is a model size.
+counter_pattern = re.compile(r"^[\d.,]+[KMB]?$")
+age_pattern = re.compile(r"^\d+\s+\w+\s+ago$", re.IGNORECASE)
+
+CHROME_WORDS = frozenset({"pulls", "tags", "updated"})
+
+
+def _clean_text(raw: str) -> str:
+    """Strip markup, decode HTML entities, and collapse whitespace."""
+    text = strip_tags_pattern.sub("", raw)
+    text = html_lib.unescape(text).replace("\xa0", " ")
+    return whitespace_pattern.sub(" ", text).strip()
+
+
+def _is_chrome(tag: str) -> bool:
+    """Reject listing-page furniture (pull counts, tag counts, update dates).
+
+    Applied to tags only: descriptions legitimately contain these words, e.g.
+    openchat's "Updated to version 3.5-0106."
+    """
+    return (
+        tag.lower() in CHROME_WORDS
+        or bool(counter_pattern.match(tag))
+        or bool(age_pattern.match(tag))
+    )
 
 
 def _parse_library_html(html: str) -> list[CatalogEntry]:
     """Parse HTML from ollama.com/library into a list of CatalogEntry items."""
     entries: list[CatalogEntry] = []
     seen_names = set()
-
-    # Pattern matches <a href="/library/<model_name>">...</a>
-    card_pattern = re.compile(
-        r'<a\s+[^>]*href=["\']/library/([a-zA-Z0-9._-]+)["\'][^>]*>(.*?)</a>',
-        re.DOTALL | re.IGNORECASE,
-    )
-    desc_pattern = re.compile(r"<p[^>]*>(.*?)</p>", re.DOTALL | re.IGNORECASE)
-    tag_pattern = re.compile(r"<span[^>]*>(.*?)</span>", re.DOTALL | re.IGNORECASE)
-    strip_tags_pattern = re.compile(r"<[^>]+>")
 
     for match in card_pattern.finditer(html):
         name = match.group(1).lower()
@@ -40,19 +77,28 @@ def _parse_library_html(html: str) -> list[CatalogEntry]:
 
         card_content = match.group(2)
 
-        # Extract description from <p>
-        desc_match = desc_pattern.search(card_content)
+        # Extract description from the first <p> that is not the stats footer
+        # (the footer is the only <p> carrying inline <svg> icons).
         description = None
-        if desc_match:
-            clean_desc = strip_tags_pattern.sub("", desc_match.group(1)).strip()
+        for d_match in desc_pattern.finditer(card_content):
+            if svg_pattern.search(d_match.group(1)):
+                continue
+            clean_desc = _clean_text(d_match.group(1))
             if clean_desc:
                 description = clean_desc
+                break
 
-        # Extract tags from <span>
-        tags = []
+        # Extract tags from pill <span> elements
+        tags: list[str] = []
         for t_match in tag_pattern.finditer(card_content):
-            clean_tag = strip_tags_pattern.sub("", t_match.group(1)).strip()
-            if clean_tag and len(clean_tag) < 30:
+            clean_tag = _clean_text(t_match.group(1))
+            if (
+                clean_tag
+                and len(clean_tag) < MAX_TAG_LENGTH
+                and not _is_chrome(clean_tag)
+                and clean_tag.lower() != name
+                and clean_tag not in tags
+            ):
                 tags.append(clean_tag)
 
         if not tags:
@@ -138,7 +184,7 @@ class DynamicCatalog(CatalogPort):
             return entries, False
         except Exception as e:  # noqa: BLE001
             logger.warning(
-                f"Contenu scrapé invalide ou suspect, basculement sur le catalogue statique: {e}"
+                f"Scraped content invalid or suspicious, falling back to the static catalog: {e}"
             )
             return None, True
 

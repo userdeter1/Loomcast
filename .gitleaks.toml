@@ -1,22 +1,22 @@
-# Configuration Gitleaks pour Loomcast
+# Gitleaks configuration for Loomcast
 title = "Loomcast Gitleaks Configuration"
 
 [allowlist]
-description = "Allowlist globale pour exclure les faux positifs dans les docs, tests et données statiques"
+description = "Global allowlist excluding false positives in docs, tests and static data"
 
-# Exclusions de chemins de fichiers :
-# - docs/ : contient des exemples de configuration TOML et des descriptions de variables d'environnement
-# - tests/ : contient des mocks, fixtures et digests de test
-# - loomcast/adapters/catalog/data/catalog.json : catalogue statique avec hashes sha256 et digests
+# Path exclusions:
+# - docs/ : contains TOML configuration examples and environment variable descriptions
+# - tests/ : contains mocks, fixtures and test digests
+# - loomcast/adapters/catalog/data/catalog.json : static catalog with sha256 hashes and digests
 paths = [
     '''docs/.*''',
     '''tests/.*''',
     '''loomcast/adapters/catalog/data/catalog.json'''
 ]
 
-# Modèles de regex autorisés (variables d'environnement et placeholders de documentation) :
-# - Noms de variables de secrets CI (TEST_PYPI_API_TOKEN, PYPI_API_TOKEN)
-# - Placeholders génériques dans la documentation (ex: YOUR_API_KEY, fake_token)
+# Allowed regex patterns (environment variables and documentation placeholders):
+# - CI secret variable names (TEST_PYPI_API_TOKEN, PYPI_API_TOKEN)
+# - Generic placeholders in the documentation (e.g. YOUR_API_KEY, fake_token)
 regexes = [
     '''TEST_PYPI_API_TOKEN''',
     '''PYPI_API_TOKEN''',

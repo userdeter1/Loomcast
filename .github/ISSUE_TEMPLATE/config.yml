@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/userdeter1/Loomcast/security/advisories/new
+    about: Report privately. Please do not open a public issue.
+  - name: Question or usage help
+    url: https://github.com/userdeter1/Loomcast/discussions
+    about: Ask here rather than opening a bug report.

@@ -1,0 +1,60 @@
+name: Bug report
+description: Report something that does not work as documented
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The exact command or code, and its full output.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `loomcast doctor`
+      description: >-
+        This reports your config, runtime availability, and catalog state, and
+        resolves most issues on its own. Redact anything sensitive.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Loomcast version
+      description: "`python -c \"import loomcast; print(loomcast.__version__)\"`"
+      placeholder: 0.1.1
+    validations:
+      required: true
+
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Runtime involved
+      options:
+        - Ollama
+        - LM Studio
+        - llama.cpp
+        - None / not runtime-specific
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS and Python version
+      placeholder: Windows 11, Python 3.12
+    validations:
+      required: true

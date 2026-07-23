@@ -1,97 +1,123 @@
-# Guide de Contribution - Loomcast
+# Contributing to Loomcast
 
-Bienvenue dans le projet Loomcast ! Merci d'adapter ces règles pour contribuer à notre base de code.
+Welcome to Loomcast! Thanks for taking the time to contribute. Please follow the
+guidelines below.
 
-## 1. Installation et Exécution des Tests en Local
+## 1. Local setup and running the tests
 
-Avant de soumettre vos modifications, installez le projet avec les dépendances de développement, activez les hooks de pré-commit et exécutez la suite de tests :
+Before submitting your changes, install the project with its development
+dependencies, enable the pre-commit hooks, and run the test suite:
 
 ```bash
-# Installation en mode éditable avec les dépendances dev
+# Editable install with dev dependencies
 pip install -e ".[dev]"
 
-# Installation des hooks pre-commit en local
+# Install the pre-commit hooks locally
 pre-commit install
 
-# Exécution des tests unitaires par défaut (les tests d'intégration sont ignorés automatiquement)
+# Run the unit tests (integration tests are skipped automatically)
 pytest -v
 
-# Exécution manuelle des tests d'intégration (nécessite un runtime local actif)
+# Run the integration tests manually (requires a running local runtime)
 pytest -m integration
 
-# Vérification du style de code avec Ruff
+# Check code style with Ruff
 ruff check .
 
-# Exécution manuelle de tous les hooks pre-commit
+# Run every pre-commit hook manually
 pre-commit run --all-files
 ```
 
-> **Remarque** : La commande `pytest` sans l'option `-m` ignore automatiquement les tests d'intégration grâce à la configuration `addopts = "-m 'not integration'"` présente dans `pyproject.toml`.
+> **Note**: `pytest` without `-m` skips integration tests automatically, thanks
+> to `addopts = "-m 'not integration'"` in `pyproject.toml`.
 
+## 2. Branch naming convention
 
-## 2. Convention de Nommage des Branches
+Please use a descriptive branch name tied to the issue or feature you are
+working on:
 
-Veuillez utiliser un nom de branche explicite lié à l'issue ou la fonctionnalité traitée :
+- Format: `issue-<number>-<short-description>`
+- Example: `issue-1-cache-content-addressed` or `issue-4-fix-cli-documentation`
 
-- Format : `issue-<numéro>-<description-courte>`
-- Exemple : `issue-1-cache-content-addressed` ou `issue-4-fix-cli-documentation`
+## 3. Pull request workflow
 
-## 3. Workflow de Pull Request
+- **Target branch**: all pull requests must target `main`.
+- **CI must pass**: the CI workflow (unit tests on Python 3.9 through 3.12, Ruff
+  lint, and Gitleaks secret scanning) must be green before a PR can be merged.
+- **Code review**: PRs are reviewed by the project maintainer before merging. If
+  the project gains more contributors, a CODEOWNERS file may be added to
+  formalise cross-review.
+- **Documentation updates**: if you add or change a CLI command, update
+  `README.md` accordingly.
 
-- **Branche cible** : Toutes les Pull Requests doivent être ouvertes vers la branche `main`.
-- **Passage de la CI** : Le workflow CI (tests unitaires sur Python 3.9 à 3.12, lint Ruff et scanning de secrets Gitleaks) doit valider la PR avant qu'elle puisse être fusionnée.
-- **Revue de code** : Les PRs sont revues par le mainteneur du projet avant fusion. Si le projet accueille plusieurs contributeurs à l'avenir, un fichier CODEOWNERS pourra être ajouté pour formaliser une revue croisée.
-- **Mise à jour de la documentation** : Si une commande CLI est modifiée ou ajoutée, mettez à jour le fichier `README.md`.
+## 4. Versioning and release procedure
 
-## 4. Gestion des Versions et Procédure de Release
+Loomcast follows [Semantic Versioning (SemVer 2.0.0)](https://semver.org/).
 
-Loomcast suit la spécification [Semantic Versioning (SemVer 2.0.0)](https://semver.org/).
+When preparing a new release:
 
-Lors de la préparation d'une nouvelle version :
-1. Mettez à jour le numéro de version dans `pyproject.toml` (`version = "X.Y.Z"`).
-2. Documentez les changements dans `CHANGELOG.md` sous une nouvelle section `[X.Y.Z]`.
-3. Soumettez une PR de release vers `main`.
-4. Une fois la PR fusionnée, créez et poussez le tag Git correspondant :
+1. Update the version number in `pyproject.toml` (`version = "X.Y.Z"`).
+2. Document the changes in `CHANGELOG.md` under a new `[X.Y.Z]` section.
+3. Open a release PR against `main`.
+4. Once the PR is merged, create and push the matching Git tag:
    ```bash
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
-5. **Publication automatique sur TestPyPI** : Le workflow GitHub Action `.github/workflows/release.yml` se déclenche automatiquement pour générer les paquets `sdist` / `wheel`, créer la release sur GitHub et publier les paquets sur **TestPyPI**.
-6. **Vérification de l'installation depuis TestPyPI** : Dans un environnement virtuel temporaire isolé (`venv`), testez l'installation du package publié :
+5. **Automatic publication to TestPyPI**: the `.github/workflows/release.yml`
+   workflow runs automatically to build the `sdist` / `wheel` artifacts, create
+   the GitHub release, and publish the packages to **TestPyPI**.
+6. **Verify the install from TestPyPI**: in a temporary isolated virtual
+   environment, test installing the published package:
    ```bash
    python -m venv .venv-test
-   # Sous Linux/macOS : source .venv-test/bin/activate
-   # Sous Windows : .venv-test\Scripts\Activate.ps1
+   # Linux/macOS: source .venv-test/bin/activate
+   # Windows:     .venv-test\Scripts\Activate.ps1
    pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/ loomcast
    python -c "import loomcast"
    loomcast --help
    ```
-7. **Publication manuelle sur le vrai PyPI** : Une fois la version validée sur TestPyPI, déclenchez le workflow manuellement depuis GitHub (Onglet *Actions* -> *Release* -> *Run workflow* -> cocher `Publish package to production PyPI`).
+7. **Manual publication to production PyPI**: once the release is validated on
+   TestPyPI, trigger the workflow manually from GitHub (*Actions* tab →
+   *Release* → *Run workflow* → tick `Publish package to production PyPI`).
 
-## 5. Sécurisation et Mise à Jour des Actions GitHub (SHA Pinning)
+## 5. Pinning and updating GitHub Actions (SHA pinning)
 
-Toutes les actions GitHub tierces dans `.github/workflows/` doivent être épinglées à un **SHA de commit complet de 40 caractères** (SHA pinning) pour des raisons de sécurité et d'immuabilité (Supply Chain Security).
+Every third-party GitHub Action in `.github/workflows/` must be pinned to a
+**full 40-character commit SHA**, for security and immutability (supply chain
+security).
 
-Lorsqu'une mise à jour d'une action GitHub tierce est nécessaire (ex: `actions/checkout`, `actions/setup-python`, `softprops/action-gh-release`, `pypa/gh-action-pypi-publish`) :
+When a third-party action needs updating (e.g. `actions/checkout`,
+`actions/setup-python`, `softprops/action-gh-release`,
+`pypa/gh-action-pypi-publish`):
 
-1. **Identifier la nouvelle version/tag** souhaitée sur le dépôt GitHub officiel de l'action.
-2. **Récupérer le SHA complet correspondant** au tag exact en exécutant :
+1. **Identify the new version/tag** you want on the action's official repository.
+2. **Resolve the matching full SHA** for that exact tag:
    ```bash
    git ls-remote https://github.com/<owner>/<repo>.git refs/tags/<tag>
-   # Exemple pour actions/checkout :
+   # Example for actions/checkout:
    git ls-remote https://github.com/actions/checkout.git refs/tags/v4
    ```
-3. **Mettre à jour le fichier workflow** (`ci.yml` ou `release.yml`) avec le nouveau SHA de 40 caractères, tout en mettant à jour le commentaire explicatif de version à côté :
+3. **Update the workflow file** (`ci.yml` or `release.yml`) with the new
+   40-character SHA, and update the version comment next to it:
    ```yaml
    uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
    ```
-4. **Tester et valider** que les workflows s'exécutent avec succès sur GitHub Actions après la mise à jour du SHA.
+4. **Test and confirm** that the workflows run successfully on GitHub Actions
+   after the SHA update.
 
-## 6. Surveillance des Dépendances (Dependabot) et Hooks Local (pre-commit)
+## 6. Dependency monitoring (Dependabot) and local hooks (pre-commit)
 
-- **Dependabot** :
-  Le fichier `.github/dependabot.yml` configure deux répertoires de surveillance hebdomadaires (`pip` pour `pyproject.toml` et `github-actions` pour les workflows). Dependabot ouvre automatiquement des PRs de mise à jour chaque semaine.
-  *Politique de fusion* : Aucune fusion automatique n'est activée. Chaque PR Dependabot doit être relue manuellement et valider l'ensemble du pipeline CI avant d'être fusionnée sur `main`.
+- **Dependabot**:
+  `.github/dependabot.yml` configures two weekly monitoring targets (`pip` for
+  `pyproject.toml` and `github-actions` for the workflows). Dependabot opens
+  update PRs automatically every week.
+  *Merge policy*: auto-merge is not enabled. Every Dependabot PR must be
+  reviewed manually and pass the full CI pipeline before being merged into
+  `main`.
 
-- **Pre-commit** :
-  Les hooks locaux configurés dans `.pre-commit-config.yaml` exécutent les nettoyages de fin de ligne, la validation TOML et le linter/formateur Ruff avant chaque commit local (`pre-commit run --all-files`). Les tests `pytest` ne sont pas inclus dans pre-commit pour garder les commits rapides; la validation complète des tests reste assurée par la CI.
+- **Pre-commit**:
+  The local hooks configured in `.pre-commit-config.yaml` run end-of-line
+  cleanups, TOML validation, and the Ruff linter/formatter before each local
+  commit (`pre-commit run --all-files`). `pytest` is deliberately excluded to
+  keep commits fast; full test validation is handled by CI.

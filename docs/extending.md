@@ -1,18 +1,21 @@
-# Extension de Loomcast : Ajouter un Nouveau Runtime
+# Extending Loomcast: adding a new runtime
 
-Loomcast est conçu selon les principes de la **Clean Architecture** (ports et adaptateurs). Cette architecture permet d'ajouter un nouveau runtime LLM (par exemple vLLM, Text Generation WebUI, LocalAI, etc.) de façon très modulaire sans impacter la logique cœur de l'application.
+Loomcast is built on **Clean Architecture** principles (ports and adapters).
+That architecture lets you add a new LLM runtime (vLLM, Text Generation WebUI,
+LocalAI, and so on) in a highly modular way, without touching the core
+application logic.
 
 ---
 
-## 1. Le Protocole `RuntimePort`
+## 1. The `RuntimePort` protocol
 
-Toutes les interactions avec les runtimes LLM passent par le port `RuntimePort` défini dans [`loomcast/ports/runtime.py`](../loomcast/ports/runtime.py).
+Every interaction with an LLM runtime goes through the `RuntimePort` port
+defined in [`loomcast/ports/runtime.py`](../loomcast/ports/runtime.py).
 
-Voici la définition du protocole Python :
+Here is the protocol definition:
 
 ```python
-from typing import Any, Dict, List, Optional
-from typing_extensions import Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable
@@ -20,37 +23,48 @@ class RuntimePort(Protocol):
     """Abstract port definition for local LLM runtime interactions."""
 
     def is_available(self) -> bool:
-        """Vérifie si le daemon/serveur local est en cours d'exécution et joignable."""
+        """Check if the local runtime daemon/server is running and reachable."""
         ...
 
     def is_model_installed(self, model: str) -> bool:
-        """Vérifie si un modèle spécifique est disponible/chargé dans ce runtime."""
+        """Check if a specific model is installed/loaded in this runtime."""
         ...
 
-    def install(self, model: str, progress: Optional[Any] = None) -> None:
-        """Télécharge ou charge un modèle dans le runtime local."""
+    def install(self, model: str, progress: Any | None = None) -> None:
+        """Install or pull a model into the local runtime."""
         ...
 
-    def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
-        """Envoie une liste de messages et retourne le texte généré."""
+    def chat(self, model: str, messages: list[dict[str, Any]]) -> str:
+        """Send a list of messages to a model and return the generated text response."""
         ...
 
-    def list_installed(self) -> List[str]:
-        """Liste les noms de tous les modèles installés/disponibles."""
+    def list_installed(self) -> list[str]:
+        """List all installed/available model names in this runtime."""
+        ...
+
+    def remove(self, model: str) -> None:
+        """Remove or delete an installed model from the local runtime."""
+        ...
+
+    def update(self, model: str, progress: Any | None = None) -> bool:
+        """Update an installed model in the local runtime and return True if digest changed."""
         ...
 ```
 
 ---
 
-## 2. Exemple de Référence : `LlamaCppRuntime`
+## 2. Reference example: `LlamaCppRuntime`
 
-L'adaptateur le plus récent et le plus simple à prendre comme modèle est [`loomcast/adapters/runtimes/llamacpp.py`](../loomcast/adapters/runtimes/llamacpp.py).
+The most recent and simplest adapter to model your own on is
+[`loomcast/adapters/runtimes/llamacpp.py`](../loomcast/adapters/runtimes/llamacpp.py).
 
-Voici une version simplifiée illustrant l'implémentation :
+Here is a simplified version illustrating the implementation:
 
 ```python
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 import httpx
+
 from loomcast.common.exceptions import RuntimeExecutionError, RuntimeUnavailableError
 from loomcast.ports.runtime import RuntimePort
 
@@ -67,43 +81,52 @@ class CustomRuntime(RuntimePort):
         except httpx.HTTPError:
             return False
 
-    def list_installed(self) -> List[str]:
+    def list_installed(self) -> list[str]:
         if not self.is_available():
             raise RuntimeUnavailableError("custom", self.base_url)
-        # Interroger l'API du runtime
+        # Query the runtime API
         ...
 
     def is_model_installed(self, model: str) -> bool:
         return model in self.list_installed()
 
-    def install(self, model: str, progress: Optional[Any] = None) -> None:
-        # Télécharger ou valider la présence du modèle
+    def install(self, model: str, progress: Any | None = None) -> None:
+        # Download the model, or validate that it is present
         ...
 
-    def chat(self, model: str, messages: List[Dict[str, Any]]) -> str:
-        # Envoyer la requête de génération
+    def chat(self, model: str, messages: list[dict[str, Any]]) -> str:
+        # Send the generation request
+        ...
+
+    def remove(self, model: str) -> None:
+        # Delete the model, or raise an explanatory error if the runtime
+        # exposes no deletion endpoint
+        ...
+
+    def update(self, model: str, progress: Any | None = None) -> bool:
+        # Re-pull the model and report whether its digest changed
         ...
 ```
 
 ---
 
-## 3. Étapes pour Intégrer un 4ème Runtime
+## 3. Steps to integrate a fourth runtime
 
-Pour ajouter un nouveau runtime (ex: `vllm`), suivez ces étapes :
+To add a new runtime (for example `vllm`), follow these steps:
 
-### Étape 1 : Déclarer le type dans le Domaine
-Ajoutez la valeur d'énumération dans `loomcast/domain/entities.py` :
+### Step 1: declare the type in the domain
+Add the enum value in `loomcast/domain/entities.py`:
 
 ```python
 class RuntimeType(str, Enum):
     OLLAMA = "ollama"
     LMSTUDIO = "lmstudio"
     LLAMACPP = "llamacpp"
-    VLLM = "vllm"  # Nouveau runtime
+    VLLM = "vllm"  # New runtime
 ```
 
-### Étape 2 : Ajouter l'URL de configuration
-Ajoutez le paramètre et son mapping d'environnement dans `loomcast/common/config.py` :
+### Step 2: add the configuration URL
+Add the setting and its environment mapping in `loomcast/common/config.py`:
 
 ```python
 class LoomcastConfig(BaseModel):
@@ -111,11 +134,11 @@ class LoomcastConfig(BaseModel):
     vllm_url: str = Field(default="http://localhost:8000")
 ```
 
-### Étape 3 : Créer l'Adaptateur
-Créez le fichier `loomcast/adapters/runtimes/vllm.py` qui implémente `RuntimePort`.
+### Step 3: create the adapter
+Create `loomcast/adapters/runtimes/vllm.py`, implementing `RuntimePort`.
 
-### Étape 4 : Enregistrer l'Adaptateur dans `LoomcastManager`
-Mettez à jour le dictionnaire `self.runtimes` dans `loomcast/core/manager.py` :
+### Step 4: register the adapter in `LoomcastManager`
+Update the `self.runtimes` dictionary in `loomcast/core/manager.py`:
 
 ```python
 self.runtimes = {
@@ -128,11 +151,16 @@ self.runtimes = {
 
 ---
 
-## 4. Règle Stricte de Clean Architecture
+## 4. The strict Clean Architecture rule
 
 > [!IMPORTANT]
-> **Séparation des responsabilités** : Ne faites **JAMAIS** dépendre la couche `domain/` ou la couche `ports/` d'une bibliothèque réseau ou E/S tierce (telle que `httpx`, `requests`, `aiohttp`, etc.).
+> **Separation of concerns**: **never** make the `domain/` or `ports/` layer
+> depend on a third-party network or I/O library (`httpx`, `requests`,
+> `aiohttp`, and so on).
 
-- La couche **Domain** (`loomcast/domain/`) contient uniquement des entités pures (dataclasses / Pydantic models).
-- La couche **Ports** (`loomcast/ports/`) contient uniquement des interfaces / protocole de types.
-- Toute la logique réseau et les appels HTTP doivent résider exclusivement dans la couche **Adapters** (`loomcast/adapters/runtimes/`).
+- The **domain** layer (`loomcast/domain/`) contains pure entities only
+  (dataclasses / Pydantic models).
+- The **ports** layer (`loomcast/ports/`) contains interfaces and type protocols
+  only.
+- All network logic and HTTP calls must live exclusively in the **adapters**
+  layer (`loomcast/adapters/runtimes/`).

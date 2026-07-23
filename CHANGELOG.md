@@ -7,10 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Model lifecycle management: `remove` and `update` commands and SDK functions.
+- `doctor` command running diagnostics across configuration, environment
+  variables, runtime availability, catalog reachability, and static catalog
+  integrity.
+- `loomcast.__version__`, read from installed package metadata.
+- `SECURITY.md`, `CODE_OF_CONDUCT.md`, and GitHub issue templates.
+- Project URLs in package metadata, so PyPI links back to the repository.
+
+### Fixed
+- Dynamic catalog parsing captured listing-page furniture as model tags. Every
+  scraped entry carried pull counters, tag counts, update dates, and undecoded
+  `&nbsp;` entities, which made tag search match every model in the catalog
+  (`search("ago")` returned all 233 entries). Tags are now read only from tag
+  pill elements, and HTML entities are decoded.
+- Model descriptions could pick up the stats footer instead of the description
+  text, and kept raw HTML entities.
+- The dynamic catalog cache key is bumped to `_v2`, so snapshots written by
+  earlier versions are ignored rather than served for up to 24 hours after
+  upgrading.
+- `config` displayed `RuntimeType.OLLAMA` instead of the `ollama` value that
+  `--set-default-backend` accepts.
+- CLI help omitted llama.cpp from the list of supported runtimes.
+
+### Changed
+- User-facing output in `doctor`, `update`, `remove`, and `verify` is now in
+  English, matching the rest of the CLI.
+- The whole project is now in English: `CONTRIBUTING.md`, all five `docs/`
+  guides, the pull request template, the integration test comments, and the
+  Gitleaks config were translated from French.
+- `--backend` and `--set-default` help text now lists `llamacpp`, which was
+  supported but undocumented.
+- `docs/extending.md` documented a `RuntimePort` missing `remove()` and
+  `update()`; it now matches the actual protocol.
+- Ruff is pinned to 0.16.0 and the lint rule set is declared explicitly via
+  `select`. Previously only `ignore` was set, so ruff fell back to its built-in
+  defaults, which changed between releases and broke CI.
+
 ## [0.1.1] - 2026-07-23
 
 ### Fixed
-- Le fichier de catalogue statique n'était pas inclus dans le package publié, rendant presque toutes les commandes inutilisables après une installation normale depuis PyPI.
+- The static catalog file was missing from the published package, which made
+  almost every command unusable after a normal install from PyPI.
 
 ## [0.1.0] - 2026-07-22
 

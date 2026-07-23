@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from enum import Enum
 from typing import Optional
 
 import typer
@@ -19,7 +20,7 @@ from loomcast.domain.entities import RuntimeType
 
 app = typer.Typer(
     name="loomcast",
-    help="Loomcast: Multi-runtime Local LLM Manager (Ollama, LM Studio)",
+    help="Loomcast: Multi-runtime Local LLM Manager (Ollama, LM Studio, llama.cpp)",
     add_completion=False,
 )
 console = Console()
@@ -71,7 +72,7 @@ def status_cmd():
 @app.command("list")
 def list_cmd(
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """List installed models in local runtimes."""
@@ -107,7 +108,7 @@ def list_cmd(
         console.print(table)
     except ValueError:
         console.print(
-            f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama' or 'lmstudio'."
+            f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama', 'lmstudio' or 'llamacpp'."
         )
         raise typer.Exit(code=1)
 
@@ -116,7 +117,7 @@ def list_cmd(
 def install_cmd(
     model: str = typer.Argument(..., help="Model identifier to install/pull"),
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """Install or pull a model into the target runtime."""
@@ -148,11 +149,11 @@ def update_cmd(
             updated = manager.update(model, runtime_type=backend, progress=progress)
         if updated:
             console.print(
-                f"[bold green]Modèle mis à jour avec succès '[cyan]{model}[/cyan]'![/bold green]"
+                f"[bold green]Successfully updated model '[cyan]{model}[/cyan]'![/bold green]"
             )
         else:
             console.print(
-                f"[yellow]Déjà à la dernière version, rien à faire pour '[cyan]{model}[/cyan]'.[/yellow]"
+                f"[yellow]Already up to date, nothing to do for '[cyan]{model}[/cyan]'.[/yellow]"
             )
     except LoomcastError as e:
         console.print(f"[bold red]Update failed:[/bold red] {e}")
@@ -168,9 +169,7 @@ def remove_cmd(
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ):
     """Remove an installed model from the target runtime."""
-    if not yes and not typer.confirm(
-        f"Supprimer {model} ? Cette action est irréversible."
-    ):
+    if not yes and not typer.confirm(f"Remove {model}? This action cannot be undone."):
         raise typer.Abort()
     manager = get_manager()
     try:
@@ -188,7 +187,7 @@ def chat_cmd(
     model: str = typer.Argument(..., help="Model name to chat with"),
     prompt: str = typer.Argument(..., help="User prompt string"),
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """Send a single prompt to a model and display the response."""
@@ -209,7 +208,7 @@ def chat_cmd(
 @app.command("config")
 def config_cmd(
     set_default_backend: Optional[str] = typer.Option(
-        None, "--set-default", help="Set default backend (ollama | lmstudio)"
+        None, "--set-default", help="Set default backend (ollama | lmstudio | llamacpp)"
     ),
     show: bool = typer.Option(
         True, "--show/--no-show", help="Display current configuration"
@@ -235,7 +234,9 @@ def config_cmd(
         table.add_column("Setting", style="cyan")
         table.add_column("Value", style="yellow")
         for k, v in config.model_dump().items():
-            table.add_row(k, str(v))
+            # Render enums as their value ("ollama"), not their repr
+            # ("RuntimeType.OLLAMA"), which is what users type back into --set.
+            table.add_row(k, v.value if isinstance(v, Enum) else str(v))
         console.print(table)
 
 
@@ -355,7 +356,7 @@ def install_category_cmd(
 def verify_cmd(
     model: str = typer.Argument(..., help="Model name to verify"),
     backend: Optional[str] = typer.Option(
-        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio)"
+        None, "--backend", "-b", help="Runtime backend (ollama | lmstudio | llamacpp)"
     ),
 ):
     """Verify integrity of an installed model."""
@@ -397,13 +398,11 @@ def doctor_cmd():
     try:
         LoomcastConfig.load()
         console.print(
-            f"[bold green]✓[/bold green] Configuration : Chargée avec succès depuis [cyan]{config_path}[/cyan]"
+            f"[bold green]✓[/bold green] Configuration: loaded successfully from [cyan]{config_path}[/cyan]"
         )
     except Exception as e:  # noqa: BLE001
         problems += 1
-        console.print(
-            f"[bold red]✗[/bold red] Configuration : Échec du chargement ({e})"
-        )
+        console.print(f"[bold red]✗[/bold red] Configuration: failed to load ({e})")
 
     # 2. Environment variables
     env_keys = [
@@ -416,11 +415,11 @@ def doctor_cmd():
     active_env = [f"{k}={os.environ[k]}" for k in env_keys if k in os.environ]
     if active_env:
         console.print(
-            f"[bold green]✓[/bold green] Variables d'environnement actives : {', '.join(active_env)}"
+            f"[bold green]✓[/bold green] Environment variables set: {', '.join(active_env)}"
         )
     else:
         console.print(
-            "[bold green]✓[/bold green] Variables d'environnement : Aucune variable Loomcast spécifique définie (valeurs par défaut)"
+            "[bold green]✓[/bold green] Environment variables: none set, using defaults"
         )
 
     # 3. Runtime availability
@@ -431,17 +430,18 @@ def doctor_cmd():
     for rtype, is_online in statuses.items():
         name = rtype.value.upper()
         if is_online:
-            console.print(f"[bold green]✓[/bold green] Runtime {name} : Disponible")
+            console.print(f"[bold green]✓[/bold green] Runtime {name}: available")
         else:
             if rtype == default_backend:
                 problems += 1
                 console.print(
-                    f"[bold red]✗[/bold red] Runtime {name} (Backend par défaut) : Indisponible. Lancez le service ou modifiez le backend par défaut dans la config."
+                    f"[bold red]✗[/bold red] Runtime {name} (default backend): unavailable. "
+                    "Start the service or change the default backend in the config."
                 )
             else:
                 warnings += 1
                 console.print(
-                    f"[bold yellow]⚠[/bold yellow] Runtime {name} : Indisponible (non configuré comme backend par défaut)"
+                    f"[bold yellow]⚠[/bold yellow] Runtime {name}: unavailable (not the default backend)"
                 )
 
     # 4. Catalog accessibility
@@ -454,53 +454,47 @@ def doctor_cmd():
                 if fb_entries:
                     warnings += 1
                     console.print(
-                        "[bold yellow]⚠[/bold yellow] Catalogue : Catalogue dynamique indisponible (basculement sur le catalogue statique)"
+                        "[bold yellow]⚠[/bold yellow] Catalog: dynamic catalog unavailable (fell back to the static catalog)"
                     )
                 else:
                     problems += 1
                     console.print(
-                        "[bold red]✗[/bold red] Catalogue : Catalogue dynamique et catalogue statique de secours sont indisponibles"
+                        "[bold red]✗[/bold red] Catalog: both the dynamic catalog and the static fallback are unavailable"
                     )
             except Exception as e:  # noqa: BLE001
                 problems += 1
                 console.print(
-                    f"[bold red]✗[/bold red] Catalogue : Échec du catalogue statique de secours ({e})"
+                    f"[bold red]✗[/bold red] Catalog: static fallback catalog failed ({e})"
                 )
         else:
             console.print(
-                "[bold green]✓[/bold green] Catalogue : Catalogue dynamique accessible"
+                "[bold green]✓[/bold green] Catalog: dynamic catalog reachable"
             )
     else:
         try:
             catalog.search("")
-            console.print("[bold green]✓[/bold green] Catalogue : Catalogue accessible")
+            console.print("[bold green]✓[/bold green] Catalog: reachable")
         except Exception as e:  # noqa: BLE001
             problems += 1
-            console.print(
-                f"[bold red]✗[/bold red] Catalogue : Erreur d'accès au catalogue ({e})"
-            )
+            console.print(f"[bold red]✗[/bold red] Catalog: access failed ({e})")
 
     # 5. Embedded static catalog file integrity
     try:
         StaticCatalog()
         console.print(
-            "[bold green]✓[/bold green] Intégrité du catalogue statique : Validation SHA-256 réussie"
+            "[bold green]✓[/bold green] Static catalog integrity: SHA-256 check passed"
         )
     except CatalogIntegrityError as e:
         problems += 1
         console.print(
-            f"[bold red]✗[/bold red] Intégrité du catalogue statique : Problème de checksum SHA-256 ({e})"
+            f"[bold red]✗[/bold red] Static catalog integrity: SHA-256 checksum mismatch ({e})"
         )
     except Exception as e:  # noqa: BLE001
         problems += 1
-        console.print(
-            f"[bold red]✗[/bold red] Intégrité du catalogue statique : Erreur ({e})"
-        )
+        console.print(f"[bold red]✗[/bold red] Static catalog integrity: error ({e})")
 
     # Summary
-    console.print(
-        f"\n[bold]{problems} problème(s) détecté(s), {warnings} avertissement(s)[/bold]"
-    )
+    console.print(f"\n[bold]{problems} problem(s) found, {warnings} warning(s)[/bold]")
 
     if problems > 0:
         raise typer.Exit(code=1)

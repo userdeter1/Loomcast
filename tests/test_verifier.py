@@ -95,7 +95,7 @@ def test_verify_lmstudio_model(monkeypatch: pytest.MonkeyPatch):
     assert result.runtime_type == RuntimeType.LMSTUDIO
     assert result.verified is False
     assert result.digest is None
-    assert "LM Studio n'expose pas de digest vérifiable" in result.message
+    assert "LM Studio does not expose a verifiable digest" in result.message
 
 
 def test_verify_non_installed_model_raises_exception(monkeypatch: pytest.MonkeyPatch):
