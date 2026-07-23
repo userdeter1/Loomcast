@@ -83,14 +83,14 @@ print(f"Modèles installés en local : {installed_models}")
 # 3. Envoyer un prompt de chat via le SDK
 messages = [
     {"role": "system", "content": "Tu me réponds brièvement."},
-    {"role": "user", "content": "Quelle est la capitale de la France ?"}
+    {"role": "user", "content": "Quelle est la capitale de la France ?"},
 ]
 
 # Appel de la fonction chat du SDK
 response = loomcast.chat(
     model="qwen2.5:0.5b",
     messages=messages,
-    runtime_type="ollama"  # Optionnel: 'ollama', 'lmstudio', ou 'llamacpp'
+    runtime_type="ollama",  # Optionnel: 'ollama', 'lmstudio', ou 'llamacpp'
 )
 
 print("\n--- Réponse du modèle ---")
@@ -116,7 +116,7 @@ for runtime, is_online in status.items():
 # Exécuter une requête de chat
 response = manager.chat(
     model="qwen2.5:0.5b",
-    messages=[{"role": "user", "content": "Explique ce qu'est un LLM en 2 phrases."}]
+    messages=[{"role": "user", "content": "Explique ce qu'est un LLM en 2 phrases."}],
 )
 print(response)
 ```

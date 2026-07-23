@@ -5,9 +5,9 @@ from loomcast.adapters.runtimes.lmstudio import LMStudioRuntime
 from loomcast.adapters.runtimes.ollama import OllamaRuntime
 
 __all__ = [
-    "OllamaRuntime",
-    "LMStudioRuntime",
-    "FileSystemCache",
-    "StaticCatalog",
     "DynamicCatalog",
+    "FileSystemCache",
+    "LMStudioRuntime",
+    "OllamaRuntime",
+    "StaticCatalog",
 ]

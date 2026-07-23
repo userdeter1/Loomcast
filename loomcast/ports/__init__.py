@@ -3,7 +3,7 @@ from loomcast.ports.catalog import CatalogPort
 from loomcast.ports.runtime import RuntimePort
 
 __all__ = [
-    "RuntimePort",
-    "CatalogPort",
     "CachePort",
+    "CatalogPort",
+    "RuntimePort",
 ]

@@ -135,3 +135,186 @@ def test_cli_verify(monkeypatch: pytest.MonkeyPatch):
     assert result.exit_code == 0
     assert "llama3" in result.output
     assert "sha256:123456" in result.output
+
+
+def test_cli_remove_interactive_confirm(monkeypatch: pytest.MonkeyPatch):
+    removed = []
+
+    class MockManager:
+        def remove(self, model, runtime_type=None):
+            removed.append((model, runtime_type))
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["remove", "llama3"], input="y\n")
+    assert result.exit_code == 0
+    assert removed == [("llama3", None)]
+    assert "Successfully removed model" in result.output
+
+
+def test_cli_remove_interactive_abort(monkeypatch: pytest.MonkeyPatch):
+    removed = []
+
+    class MockManager:
+        def remove(self, model, runtime_type=None):
+            removed.append((model, runtime_type))
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["remove", "llama3"], input="n\n")
+    assert result.exit_code != 0
+    assert len(removed) == 0
+
+
+def test_cli_remove_yes_flag(monkeypatch: pytest.MonkeyPatch):
+    removed = []
+
+    class MockManager:
+        def remove(self, model, runtime_type=None):
+            removed.append((model, runtime_type))
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["remove", "llama3", "--yes", "-b", "ollama"])
+    assert result.exit_code == 0
+    assert removed == [("llama3", "ollama")]
+    assert "Successfully removed model" in result.output
+
+
+def test_cli_update_success(monkeypatch: pytest.MonkeyPatch):
+    class MockManager:
+        def update(self, model, runtime_type=None, progress=None):
+            return True
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["update", "llama3"])
+    assert result.exit_code == 0
+    assert "Modèle mis à jour avec succès" in result.output
+
+
+def test_cli_update_already_latest(monkeypatch: pytest.MonkeyPatch):
+    class MockManager:
+        def update(self, model, runtime_type=None, progress=None):
+            return False
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["update", "llama3"])
+    assert result.exit_code == 0
+    assert "Déjà à la dernière version, rien à faire" in result.output
+
+
+def test_cli_doctor_all_runtimes_available(monkeypatch: pytest.MonkeyPatch):
+    from loomcast.adapters.catalog.static import StaticCatalog
+
+    class MockManager:
+        config = type(
+            "Config",
+            (),
+            {"default_backend": RuntimeType.OLLAMA},
+        )()
+        catalog = StaticCatalog()
+
+        def list_available_runtimes(self):
+            return {
+                RuntimeType.OLLAMA: True,
+                RuntimeType.LMSTUDIO: True,
+                RuntimeType.LLAMACPP: True,
+            }
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["doctor"])
+    assert result.exit_code == 0
+    assert "0 problème(s) détecté(s)" in result.output
+
+
+def test_cli_doctor_default_backend_offline(monkeypatch: pytest.MonkeyPatch):
+    from loomcast.adapters.catalog.static import StaticCatalog
+
+    class MockManager:
+        config = type(
+            "Config",
+            (),
+            {"default_backend": RuntimeType.OLLAMA},
+        )()
+        catalog = StaticCatalog()
+
+        def list_available_runtimes(self):
+            return {
+                RuntimeType.OLLAMA: False,
+                RuntimeType.LMSTUDIO: True,
+                RuntimeType.LLAMACPP: True,
+            }
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["doctor"])
+    assert result.exit_code != 0
+    assert "1 problème(s) détecté(s)" in result.output
+
+
+def test_cli_doctor_dynamic_catalog_fallback_warning(monkeypatch: pytest.MonkeyPatch):
+    from loomcast.adapters.catalog.dynamic import DynamicCatalog
+    from loomcast.adapters.catalog.static import StaticCatalog
+
+    class MockDynamicCatalog(DynamicCatalog):
+        def __init__(self):
+            self.fallback_catalog = StaticCatalog()
+
+        def _get_entries(self):
+            return None, True
+
+    class MockManager:
+        config = type(
+            "Config",
+            (),
+            {"default_backend": RuntimeType.OLLAMA},
+        )()
+        catalog = MockDynamicCatalog()
+
+        def list_available_runtimes(self):
+            return {
+                RuntimeType.OLLAMA: True,
+                RuntimeType.LMSTUDIO: True,
+                RuntimeType.LLAMACPP: True,
+            }
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    result = runner.invoke(app, ["doctor"])
+    assert result.exit_code == 0
+    assert "0 problème(s) détecté(s)" in result.output
+    assert "1 avertissement(s)" in result.output
+
+
+def test_cli_doctor_static_catalog_checksum_failure(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+):
+    from loomcast.adapters.catalog.static import StaticCatalog
+
+    real_static = StaticCatalog()
+    catalog_json_content = real_static.catalog_path.read_bytes()
+
+    bad_catalog = tmp_path / "catalog.json"
+    bad_catalog.write_bytes(catalog_json_content)
+    bad_sha = tmp_path / "catalog.json.sha256"
+    bad_sha.write_text("invalid_checksum_hash_12345")
+
+    class MockManager:
+        config = type(
+            "Config",
+            (),
+            {"default_backend": RuntimeType.OLLAMA},
+        )()
+        catalog = real_static
+
+        def list_available_runtimes(self):
+            return {
+                RuntimeType.OLLAMA: True,
+                RuntimeType.LMSTUDIO: True,
+                RuntimeType.LLAMACPP: True,
+            }
+
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: MockManager())
+    monkeypatch.setattr(
+        "loomcast.cli.main.StaticCatalog",
+        lambda *args, **kwargs: StaticCatalog(catalog_path=bad_catalog),
+    )
+
+    result = runner.invoke(app, ["doctor"])
+    assert result.exit_code != 0
+    assert "1 problème(s) détecté(s)" in result.output

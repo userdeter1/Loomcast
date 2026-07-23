@@ -60,7 +60,7 @@ import loomcast
 response_lms = loomcast.chat(
     model="qwen2.5-coder-7b",
     messages=[{"role": "user", "content": "Hello!"}],
-    runtime_type="lmstudio"
+    runtime_type="lmstudio",
 )
 
 # Obtenir directement l'adaptateur de runtime

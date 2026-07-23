@@ -1,6 +1,7 @@
 import hashlib
 import json
 from pathlib import Path
+
 import pytest
 
 from loomcast.adapters.catalog.static import StaticCatalog
@@ -155,9 +156,9 @@ def test_catalog_json_and_sha256_included_in_package_resources():
             "loomcast.adapters.catalog"
         ).joinpath("data", "catalog.json.sha256")
         assert catalog_resource.is_file(), "catalog.json missing from package resources"
-        assert (
-            checksum_resource.is_file()
-        ), "catalog.json.sha256 missing from package resources"
+        assert checksum_resource.is_file(), (
+            "catalog.json.sha256 missing from package resources"
+        )
     except AttributeError:
         assert importlib.resources.is_resource(
             "loomcast.adapters.catalog.data", "catalog.json"

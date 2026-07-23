@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 import json
 import re
 import time
-from typing import List, Optional, Tuple
 
 import httpx
-
 from pydantic import ValidationError
 
 from loomcast.adapters.cache.store import FileSystemCache
@@ -18,9 +18,9 @@ CACHE_SNAPSHOT_KEY = "catalog_dynamic_snapshot"
 MIN_CATALOG_ENTRIES = 5
 
 
-def _parse_library_html(html: str) -> List[CatalogEntry]:
+def _parse_library_html(html: str) -> list[CatalogEntry]:
     """Parse HTML from ollama.com/library into a list of CatalogEntry items."""
-    entries: List[CatalogEntry] = []
+    entries: list[CatalogEntry] = []
     seen_names = set()
 
     # Pattern matches <a href="/library/<model_name>">...</a>
@@ -78,8 +78,8 @@ class DynamicCatalog(CatalogPort):
 
     def __init__(
         self,
-        cache: Optional[CachePort] = None,
-        fallback_catalog: Optional[CatalogPort] = None,
+        cache: CachePort | None = None,
+        fallback_catalog: CatalogPort | None = None,
         ttl_hours: int = 24,
     ):
         self.cache: CachePort = cache if cache is not None else FileSystemCache()
@@ -88,7 +88,7 @@ class DynamicCatalog(CatalogPort):
         )
         self.ttl_hours = ttl_hours
 
-    def _get_entries(self) -> Tuple[Optional[List[CatalogEntry]], bool]:
+    def _get_entries(self) -> tuple[list[CatalogEntry] | None, bool]:
         """Fetch entries from cache or network, or indicate fallback required."""
         # 1. Try cache
         raw_cache = self.cache.get(CACHE_SNAPSHOT_KEY)
@@ -103,7 +103,7 @@ class DynamicCatalog(CatalogPort):
                     ]
                     if len(entries) >= MIN_CATALOG_ENTRIES:
                         return entries, False
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.warning(f"Failed to read dynamic catalog cache snapshot: {e}")
 
         # 2. Try scraping Ollama library
@@ -136,20 +136,20 @@ class DynamicCatalog(CatalogPort):
                 CACHE_SNAPSHOT_KEY, json.dumps(cache_payload).encode("utf-8")
             )
             return entries, False
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.warning(
                 f"Contenu scrapé invalide ou suspect, basculement sur le catalogue statique: {e}"
             )
             return None, True
 
-    def search(self, query: str) -> List[CatalogEntry]:
+    def search(self, query: str) -> list[CatalogEntry]:
         """Search catalog for entries matching query, falling back to static catalog if needed."""
         entries, is_fallback = self._get_entries()
         if is_fallback or entries is None:
             return self.fallback_catalog.search(query)
 
         query_lower = query.lower()
-        results: List[CatalogEntry] = []
+        results: list[CatalogEntry] = []
         for entry in entries:
             name_match = query_lower in entry.name.lower()
             desc_match = bool(
@@ -162,7 +162,7 @@ class DynamicCatalog(CatalogPort):
 
         return results
 
-    def get_entry(self, name: str) -> Optional[CatalogEntry]:
+    def get_entry(self, name: str) -> CatalogEntry | None:
         """Retrieve catalog entry by name, falling back to static catalog if needed."""
         entries, is_fallback = self._get_entries()
         if is_fallback or entries is None:
