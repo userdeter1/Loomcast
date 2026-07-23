@@ -32,7 +32,7 @@ def get_manager() -> LoomcastManager:
         return LoomcastManager(config=config)
     except Exception as e:  # noqa: BLE001
         console.print(f"[bold red]Configuration error:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("status")
@@ -110,7 +110,7 @@ def list_cmd(
         console.print(
             f"[bold red]Invalid backend:[/bold red] '{backend}'. Choose 'ollama', 'lmstudio' or 'llamacpp'."
         )
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("install")
@@ -131,7 +131,7 @@ def install_cmd(
         )
     except LoomcastError as e:
         console.print(f"[bold red]Installation failed:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("update")
@@ -157,7 +157,7 @@ def update_cmd(
             )
     except LoomcastError as e:
         console.print(f"[bold red]Update failed:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("remove")
@@ -179,7 +179,7 @@ def remove_cmd(
         )
     except LoomcastError as e:
         console.print(f"[bold red]Removal failed:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("chat")
@@ -202,7 +202,7 @@ def chat_cmd(
         console.print(Panel(response, title=f"Model: {model}", border_style="cyan"))
     except LoomcastError as e:
         console.print(f"[bold red]Chat error:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("config")
@@ -227,7 +227,7 @@ def config_cmd(
             console.print(
                 f"[bold red]Invalid backend:[/bold red] '{set_default_backend}'."
             )
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
 
     if show:
         table = Table(title="Loomcast Configuration")
@@ -269,7 +269,7 @@ def search_cmd(
         console.print(table)
     except LoomcastError as e:
         console.print(f"[bold red]Search error:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("recommend")
@@ -305,7 +305,7 @@ def recommend_cmd(
         console.print(table)
     except LoomcastError as e:
         console.print(f"[bold red]Recommendation error:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("install-category")
@@ -349,7 +349,7 @@ def install_category_cmd(
             )
     except LoomcastError as e:
         console.print(f"[bold red]Category installation error:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("verify")
@@ -382,7 +382,7 @@ def verify_cmd(
         console.print(table)
     except LoomcastError as e:
         console.print(f"[bold red]Verification error:[/bold red] {e}")
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
 
 @app.command("doctor")
