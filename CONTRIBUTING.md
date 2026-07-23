@@ -62,3 +62,21 @@ Lors de la préparation d'une nouvelle version :
    ```
 7. **Publication manuelle sur le vrai PyPI** : Une fois la version validée sur TestPyPI, déclenchez le workflow manuellement depuis GitHub (Onglet *Actions* -> *Release* -> *Run workflow* -> cocher `Publish package to production PyPI`).
 
+## 5. Sécurisation et Mise à Jour des Actions GitHub (SHA Pinning)
+
+Toutes les actions GitHub tierces dans `.github/workflows/` doivent être épinglées à un **SHA de commit complet de 40 caractères** (SHA pinning) pour des raisons de sécurité et d'immuabilité (Supply Chain Security).
+
+Lorsqu'une mise à jour d'une action GitHub tierce est nécessaire (ex: `actions/checkout`, `actions/setup-python`, `softprops/action-gh-release`, `pypa/gh-action-pypi-publish`) :
+
+1. **Identifier la nouvelle version/tag** souhaitée sur le dépôt GitHub officiel de l'action.
+2. **Récupérer le SHA complet correspondant** au tag exact en exécutant :
+   ```bash
+   git ls-remote https://github.com/<owner>/<repo>.git refs/tags/<tag>
+   # Exemple pour actions/checkout :
+   git ls-remote https://github.com/actions/checkout.git refs/tags/v4
+   ```
+3. **Mettre à jour le fichier workflow** (`ci.yml` ou `release.yml`) avec le nouveau SHA de 40 caractères, tout en mettant à jour le commentaire explicatif de version à côté :
+   ```yaml
+   uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+   ```
+4. **Tester et valider** que les workflows s'exécutent avec succès sur GitHub Actions après la mise à jour du SHA.
