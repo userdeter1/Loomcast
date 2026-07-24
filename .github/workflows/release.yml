@@ -6,6 +6,10 @@ on:
       - 'v*.*.*'
   workflow_dispatch:
     inputs:
+      tag:
+        description: 'Existing release tag to publish, e.g. v0.2.0'
+        type: string
+        required: true
       publish_to_pypi:
         description: 'Publish package to production PyPI'
         type: boolean
@@ -58,21 +62,42 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: "3.12"
-
-      - name: Install build dependencies
+      # Deliberately no checkout and no build. This job publishes the exact
+      # artifacts attached to the release by the tag job -- the same files that
+      # were validated on TestPyPI. Rebuilding here would upload a different
+      # build than the one that was tested whenever main has moved on since the
+      # tag.
+      - name: Download artifacts attached to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
         run: |
-          python -m pip install --upgrade pip
-          pip install build
+          gh release download "$TAG" \
+            --repo "$REPO" \
+            --pattern '*.whl' \
+            --pattern '*.tar.gz' \
+            --dir dist
+          ls -l dist
 
-      - name: Build package (sdist and wheel)
-        run: python -m build
+      - name: Verify the artifacts match the tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          version="${TAG#v}"
+          # nullglob only applies to patterns containing a metacharacter, so the
+          # sdist is checked with -f rather than through an array: an array built
+          # from a literal path is never empty, even when the file is missing.
+          shopt -s nullglob
+          wheels=(dist/loomcast-"$version"-*.whl)
+          sdist="dist/loomcast-$version.tar.gz"
+          if [ ${#wheels[@]} -eq 0 ] || [ ! -f "$sdist" ]; then
+            echo "::error::Release '$TAG' does not carry both a wheel and an sdist for version '$version'."
+            ls -l dist
+            exit 1
+          fi
+          echo "Publishing version $version:"
+          printf '  %s\n' "${wheels[@]}" "$sdist"
 
       - name: Publish distribution to PyPI
         uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # release/v1
