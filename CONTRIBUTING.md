@@ -79,7 +79,14 @@ When preparing a new release:
    ```
 7. **Manual publication to production PyPI**: once the release is validated on
    TestPyPI, trigger the workflow manually from GitHub (*Actions* tab →
-   *Release* → *Run workflow* → tick `Publish package to production PyPI`).
+   *Release* → *Run workflow*), enter the tag you published in step 4 (for
+   example `v0.2.0`), and tick `Publish package to production PyPI`.
+
+   This job downloads the artifacts attached to that release and publishes those
+   exact files. It does not rebuild, so PyPI receives the same build that was
+   validated on TestPyPI even if `main` has moved on since the tag. If the
+   release does not carry both a wheel and an sdist matching the tag, the job
+   fails rather than publishing.
 
 ## 5. Pinning and updating GitHub Actions (SHA pinning)
 

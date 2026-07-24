@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- The release workflow no longer rebuilds the package when publishing to
+  production PyPI. It now downloads the artifacts attached to the tagged release
+  and publishes those exact files, so PyPI receives the same build that was
+  validated on TestPyPI even if `main` moved on since the tag. The manual
+  trigger takes the tag as a required input, and the job fails if the release
+  does not carry a matching wheel and sdist.
+
 ### Fixed
 - `loomcast chat` crashed with a raw `MarkupError` traceback whenever a model's
   response contained an unmatched closing bracket, e.g. `[/path]`. External text
