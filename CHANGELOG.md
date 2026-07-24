@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-24
+
 ### Fixed
 - `loomcast chat` crashed with a raw `MarkupError` traceback whenever a model's
   response contained an unmatched closing bracket, e.g. `[/path]`. External text
