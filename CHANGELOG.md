@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   trigger takes the tag as a required input, and the job fails if the release
   does not carry a matching wheel and sdist.
 
+## [0.2.0] - 2026-07-24
+
 ### Fixed
 - `loomcast chat` crashed with a raw `MarkupError` traceback whenever a model's
   response contained an unmatched closing bracket, e.g. `[/path]`. External text
