@@ -44,8 +44,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - User-facing output in `doctor`, `update`, `remove`, and `verify` is now in
   English, matching the rest of the CLI.
 - The whole project is now in English: `CONTRIBUTING.md`, all five `docs/`
-  guides, the pull request template, the integration test comments, and the
-  Gitleaks config were translated from French.
+  guides, the pull request template, the integration test comments, the
+  Gitleaks config, and the README documentation links were translated from
+  French.
+- README now documents installing from PyPI (`pip install loomcast`) rather than
+  an editable install of a source tree the reader does not have, and covers
+  `install`, `update`, `remove`, `doctor` and `config`, which were missing from
+  the quick start.
 - `--backend` and `--set-default` help text now lists `llamacpp`, which was
   supported but undocumented.
 - `docs/extending.md` documented a `RuntimePort` missing `remove()` and
