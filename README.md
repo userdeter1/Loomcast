@@ -10,7 +10,14 @@ Python SDK and CLI for seamlessly managing local LLM runtimes (**Ollama**, **LM 
 ## Installation
 
 ```bash
-pip install -e .
+pip install loomcast
+```
+
+To work on Loomcast itself, install it from a clone in editable mode with the
+development dependencies:
+
+```bash
+pip install -e ".[dev]"
 ```
 
 ## Quick Start
@@ -21,6 +28,9 @@ pip install -e .
 # Check status of local runtimes
 loomcast status
 
+# Diagnose configuration, runtimes, catalog and integrity
+loomcast doctor
+
 # List installed models
 loomcast list
 
@@ -30,6 +40,9 @@ loomcast search code
 # Recommend models for a specific task or tag
 loomcast recommend coding
 
+# Install a model
+loomcast install llama3 --backend ollama
+
 # Batch install all models in a category
 loomcast install-category code --backend ollama
 
@@ -38,15 +51,29 @@ loomcast chat llama3 "Hello world!" --backend ollama
 
 # Verify installed model integrity
 loomcast verify llama3 --backend ollama
+
+# Update an installed model
+loomcast update llama3 --backend ollama
+
+# Remove an installed model
+loomcast remove llama3 --backend ollama
+
+# View or change configuration
+loomcast config
+loomcast config --set-default lmstudio
 ```
+
+Model installation, removal and updating are driven through the runtime's API,
+which only Ollama exposes. LM Studio and llama.cpp report an explanatory error
+instead: load models through the LM Studio application, or start `llama-server`
+with the model you want.
 
 ### Python SDK Usage
 
 ```python
 import loomcast
 
-# Initialize manager
-manager = loomcast.LoomcastManager()
+print(loomcast.__version__)
 
 # Search catalog
 results = loomcast.search("code")
@@ -56,7 +83,11 @@ for model in results:
 # Recommend models for a task
 recs = loomcast.recommend("coding")
 
-# Batch install category
+# List what is installed locally
+print(loomcast.list_installed())
+
+# Install a model, and batch install a whole category
+loomcast.install("llama3", runtime_type="ollama")
 installed, failed = loomcast.install_category("code", runtime_type="ollama")
 
 # Send chat messages
@@ -68,14 +99,30 @@ print(response)
 # Verify model integrity
 verification = loomcast.verify("llama3", runtime_type="ollama")
 print(f"Verified: {verification.verified}, Digest: {verification.digest}")
+
+# Update returns True when the digest changed, False when already current
+changed = loomcast.update("llama3", runtime_type="ollama")
+
+# Remove an installed model
+loomcast.remove("llama3", runtime_type="ollama")
+```
+
+For finer control over configuration or dependency injection, drive
+`LoomcastManager` directly:
+
+```python
+from loomcast import LoomcastConfig, LoomcastManager
+
+manager = LoomcastManager(config=LoomcastConfig(default_backend="ollama"))
+print(manager.list_available_runtimes())
 ```
 
 ## Documentation
 
 Detailed documentation guides are available in the [`docs/`](docs/) directory:
 
-- [Prise en main (Getting Started)](docs/getting-started.md)
+- [Getting started](docs/getting-started.md)
 - [Configuration](docs/configuration.md)
-- [Runtimes Supportés](docs/runtimes.md)
-- [Extension & Architecture](docs/extending.md)
-- [Référence CLI](docs/cli-reference.md)
+- [Supported runtimes](docs/runtimes.md)
+- [Extending & architecture](docs/extending.md)
+- [CLI reference](docs/cli-reference.md)
