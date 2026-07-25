@@ -176,7 +176,43 @@ loomcast chat qwen2.5-coder-7b "Write a bash script that lists files." -b lmstud
 
 ---
 
-## 7. `loomcast config`
+## 7. `loomcast compare`
+
+Sends one prompt to several runtimes at once and shows their answers side by
+side, one panel per runtime.
+
+### Syntax
+```bash
+loomcast compare PROMPT [OPTIONS]
+```
+
+### Arguments
+- `PROMPT` (required): the prompt sent to every selected runtime.
+
+### Options
+- `-m, --model TEXT`: model to use on every runtime. When omitted, each runtime's
+  first installed model is auto-detected (the three runtimes do not share a model
+  namespace).
+- `-b, --backend TEXT`: restrict to a specific runtime. Repeatable
+  (`-b ollama -b lmstudio`). Defaults to all runtimes.
+
+A runtime that is offline, has no usable model, or fails mid-request shows an
+error panel instead of aborting the whole comparison. Model output is rendered
+as literal text, so a reply containing markup-like characters is shown verbatim.
+The exit code is `1` only when no runtime produced a response.
+
+### Examples
+```bash
+# Same prompt to every available runtime, auto-detecting each model
+loomcast compare "Explain recursion in one sentence."
+
+# Compare two runtimes, forcing the same model name on both
+loomcast compare "Write a haiku about the sea." -b ollama -b lmstudio -m llama3
+```
+
+---
+
+## 8. `loomcast config`
 
 Views or updates Loomcast's persistent configuration (`config.toml`).
 
@@ -202,7 +238,7 @@ loomcast config --set-default lmstudio
 
 ---
 
-## 8. `loomcast search`
+## 9. `loomcast search`
 
 Searches for models in the Loomcast index catalog.
 
@@ -221,7 +257,7 @@ loomcast search code
 
 ---
 
-## 9. `loomcast recommend`
+## 10. `loomcast recommend`
 
 Finds and recommends models suited to a specific task or tag.
 
@@ -241,7 +277,7 @@ loomcast recommend coding
 
 ---
 
-## 10. `loomcast install-category`
+## 11. `loomcast install-category`
 
 Batch-installs every model associated with a given category or tag.
 
@@ -266,7 +302,7 @@ loomcast install-category coding --backend ollama --max-concurrent 2
 
 ---
 
-## 11. `loomcast verify`
+## 12. `loomcast verify`
 
 Verifies the cryptographic integrity (SHA-256 digest) of an installed model.
 
@@ -288,7 +324,7 @@ loomcast verify qwen2.5:0.5b --backend ollama
 
 ---
 
-## 12. `loomcast doctor`
+## 13. `loomcast doctor`
 
 Runs a full diagnostic of the Loomcast environment: TOML configuration,
 environment variables, local runtime availability, catalog reachability, and

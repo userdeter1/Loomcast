@@ -383,3 +383,91 @@ def test_cli_list_survives_markup_in_model_name(monkeypatch: pytest.MonkeyPatch)
 
     assert result.exit_code == 0
     assert result.exception is None
+
+
+# --- compare command ----------------------------------------------------------
+from loomcast.domain.entities import ComparisonResult  # noqa: E402
+
+
+def _compare_manager(results):
+    class MockManager:
+        def compare(self, prompt, runtime_types=None, model=None):
+            self.called_with = (prompt, runtime_types, model)
+            return results
+
+    return MockManager()
+
+
+def test_cli_compare_shows_each_runtime(monkeypatch: pytest.MonkeyPatch):
+    results = [
+        ComparisonResult(
+            runtime_type=RuntimeType.OLLAMA, model="llama3", response="hi from ollama"
+        ),
+        ComparisonResult(
+            runtime_type=RuntimeType.LMSTUDIO, available=False, error="Runtime offline"
+        ),
+    ]
+    monkeypatch.setattr(
+        "loomcast.cli.main.get_manager", lambda: _compare_manager(results)
+    )
+    result = runner.invoke(app, ["compare", "hello"])
+
+    assert result.exit_code == 0
+    assert "OLLAMA" in result.output
+    assert "llama3" in result.output
+    assert "LMSTUDIO" in result.output
+    assert "Runtime offline" in result.output
+
+
+def test_cli_compare_renders_markup_in_response_literally(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    results = [
+        ComparisonResult(
+            runtime_type=RuntimeType.OLLAMA,
+            model="llama3",
+            response="see [/path] and [bold red]x[/bold red]",
+        )
+    ]
+    monkeypatch.setattr(
+        "loomcast.cli.main.get_manager", lambda: _compare_manager(results)
+    )
+    result = runner.invoke(app, ["compare", "hello"])
+
+    assert result.exit_code == 0
+    assert result.exception is None
+    assert "[/path]" in result.output
+    assert "[bold red]" in result.output
+
+
+def test_cli_compare_exit_code_when_no_response(monkeypatch: pytest.MonkeyPatch):
+    results = [
+        ComparisonResult(
+            runtime_type=RuntimeType.OLLAMA, available=False, error="Runtime offline"
+        ),
+        ComparisonResult(
+            runtime_type=RuntimeType.LMSTUDIO, available=False, error="Runtime offline"
+        ),
+    ]
+    monkeypatch.setattr(
+        "loomcast.cli.main.get_manager", lambda: _compare_manager(results)
+    )
+    result = runner.invoke(app, ["compare", "hello"])
+
+    assert result.exit_code == 1
+
+
+def test_cli_compare_forwards_backend_filter(monkeypatch: pytest.MonkeyPatch):
+    mgr = _compare_manager(
+        [ComparisonResult(runtime_type=RuntimeType.OLLAMA, model="m", response="ok")]
+    )
+    monkeypatch.setattr("loomcast.cli.main.get_manager", lambda: mgr)
+    result = runner.invoke(
+        app, ["compare", "hi", "-b", "ollama", "-b", "lmstudio", "-m", "shared"]
+    )
+
+    assert result.exit_code == 0
+    prompt, runtime_types, model = mgr.called_with
+    assert prompt == "hi"
+    assert runtime_types == ["ollama", "lmstudio"]
+    assert model == "shared"
