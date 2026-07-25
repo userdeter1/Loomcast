@@ -1,1 +1,4 @@
 include loomcast/adapters/catalog/data/*.json
+include logo.svg
+include LICENSE
+include README.md

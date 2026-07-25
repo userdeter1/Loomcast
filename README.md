@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.svg" alt="Loomcast Logo" width="160" height="160" />
+</p>
+
 # Loomcast
 
 <p align="center">
@@ -226,13 +230,13 @@ print(manager.list_available_runtimes())
 
 Explore detailed guides in the [`docs/`](docs/) directory:
 
-- 🚀 [Getting Started](docs/getting-started.md) — Installation, quick setup, and first chat.
-- ⚙️ [Configuration Guide](docs/configuration.md) — Environment variables and `config.json` options.
-- 🔌 [Supported Runtimes](docs/runtimes.md) — Setup details for Ollama, LM Studio, and llama.cpp.
-- 💻 [CLI Reference](docs/cli-reference.md) — Complete command-line manual.
-- 🐍 [Python SDK Reference](docs/python-sdk-reference.md) — Complete Python API reference & exceptions.
-- 🏗️ [Extending & Architecture](docs/extending.md) — Hexagonal architecture & custom runtime adapters.
-- 🛠️ [Troubleshooting & FAQ](docs/troubleshooting.md) — Diagnostics, network troubleshooting, and FAQ.
+- [Getting Started](docs/getting-started.md) — Installation, quick setup, and first chat.
+- [Configuration Guide](docs/configuration.md) — Environment variables and `config.json` options.
+- [Supported Runtimes](docs/runtimes.md) — Setup details for Ollama, LM Studio, and llama.cpp.
+- [CLI Reference](docs/cli-reference.md) — Complete command-line manual.
+- [Python SDK Reference](docs/python-sdk-reference.md) — Complete Python API reference & exceptions.
+- [Extending & Architecture](docs/extending.md) — Hexagonal architecture & custom runtime adapters.
+- [Troubleshooting & FAQ](docs/troubleshooting.md) — Diagnostics, network troubleshooting, and FAQ.
 
 ---
 
