@@ -21,19 +21,29 @@ export default function Nav() {
             Features
           </Link>
           <Link
+            href="/#actions"
+            className="rounded-md px-3 py-2 text-slate-300 transition hover:text-white"
+          >
+            Actions & CLI
+          </Link>
+          <Link
+            href="/#compare-demo"
+            className="hidden rounded-md px-3 py-2 text-slate-300 transition hover:text-white md:block"
+          >
+            Simulator
+          </Link>
+          <Link
+            href="/#diagnostics"
+            className="hidden rounded-md px-3 py-2 text-slate-300 transition hover:text-white lg:block"
+          >
+            Diagnostics
+          </Link>
+          <Link
             href="/docs/getting-started"
             className="rounded-md px-3 py-2 text-slate-300 transition hover:text-white"
           >
             Docs
           </Link>
-          <a
-            href={SITE.pypi}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden rounded-md px-3 py-2 text-slate-300 transition hover:text-white sm:block"
-          >
-            PyPI
-          </a>
           <a
             href={SITE.github}
             target="_blank"
