@@ -45,6 +45,14 @@ export default function Nav() {
             Docs
           </Link>
           <a
+            href={SITE.pypi}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden rounded-md px-3 py-2 text-slate-300 transition hover:text-white sm:block"
+          >
+            PyPI
+          </a>
+          <a
             href={SITE.github}
             target="_blank"
             rel="noopener noreferrer"
