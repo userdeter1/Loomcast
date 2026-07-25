@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.svg" alt="Loomcast Logo" width="160" height="160" />
+</p>
+
 # Loomcast
 
 <p align="center">
