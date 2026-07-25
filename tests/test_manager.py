@@ -289,3 +289,144 @@ def test_manager_update_resolve_runtime():
     res = manager.update("llama3", runtime_type="ollama")
     assert res is True
     assert updated_calls == ["llama3"]
+
+
+# --- compare (multi-runtime) --------------------------------------------------
+from loomcast.common.exceptions import RuntimeUnavailableError  # noqa: E402
+
+
+class FakeRuntime(RuntimePort):
+    """Configurable runtime double for compare() tests."""
+
+    def __init__(self, available=True, installed=None, reply="ok", fail_chat=False):
+        self._available = available
+        self._installed = installed if installed is not None else ["auto-model"]
+        self._reply = reply
+        self._fail_chat = fail_chat
+        self.chat_calls: list[tuple[str, str]] = []
+
+    def is_available(self) -> bool:
+        return self._available
+
+    def list_installed(self) -> list[str]:
+        if not self._available:
+            raise RuntimeUnavailableError("fake", "http://x")
+        return list(self._installed)
+
+    def is_model_installed(self, model: str) -> bool:
+        return model in self._installed
+
+    def chat(self, model: str, messages: list[dict[str, Any]]) -> str:
+        if self._fail_chat:
+            raise RuntimeExecutionError("chat boom")
+        self.chat_calls.append((model, messages[-1]["content"]))
+        return f"{self._reply}:{model}"
+
+    def install(self, model, progress=None):  # pragma: no cover - unused here
+        ...
+
+    def remove(self, model):  # pragma: no cover - unused here
+        ...
+
+    def update(self, model, progress=None):  # pragma: no cover - unused here
+        return False
+
+
+def _manager_with(runtimes: dict) -> LoomcastManager:
+    mgr = LoomcastManager(catalog=DummyCatalogAdapter())
+    for rtype, adapter in runtimes.items():
+        mgr.runtimes[rtype] = adapter
+    return mgr
+
+
+def test_compare_returns_results_in_requested_order():
+    mgr = _manager_with(
+        {
+            RuntimeType.OLLAMA: FakeRuntime(reply="a"),
+            RuntimeType.LMSTUDIO: FakeRuntime(reply="b"),
+        }
+    )
+    results = mgr.compare(
+        "hi", runtime_types=[RuntimeType.LMSTUDIO, RuntimeType.OLLAMA]
+    )
+    assert [r.runtime_type for r in results] == [
+        RuntimeType.LMSTUDIO,
+        RuntimeType.OLLAMA,
+    ]
+    assert results[0].response == "b:auto-model"
+    assert results[1].response == "a:auto-model"
+    assert all(r.error is None for r in results)
+
+
+def test_compare_defaults_to_all_runtimes():
+    mgr = _manager_with(
+        {
+            RuntimeType.OLLAMA: FakeRuntime(),
+            RuntimeType.LMSTUDIO: FakeRuntime(),
+            RuntimeType.LLAMACPP: FakeRuntime(),
+        }
+    )
+    results = mgr.compare("hi")
+    assert {r.runtime_type for r in results} == set(RuntimeType)
+
+
+def test_compare_offline_runtime_yields_error_not_crash():
+    mgr = _manager_with(
+        {
+            RuntimeType.OLLAMA: FakeRuntime(reply="a"),
+            RuntimeType.LMSTUDIO: FakeRuntime(available=False),
+        }
+    )
+    results = mgr.compare("hi", runtime_types=["ollama", "lmstudio"])
+    online, offline = results[0], results[1]
+    assert online.response == "a:auto-model"
+    assert offline.available is False
+    assert offline.error == "Runtime offline"
+    assert offline.model is None
+
+
+def test_compare_model_resolution_precedence():
+    ollama = FakeRuntime(installed=["installed-first"])
+    lmstudio = FakeRuntime(installed=["installed-first"])
+    mgr = _manager_with({RuntimeType.OLLAMA: ollama, RuntimeType.LMSTUDIO: lmstudio})
+    results = mgr.compare(
+        "hi",
+        runtime_types=["ollama", "lmstudio"],
+        model="shared",
+        models={RuntimeType.OLLAMA: "override"},
+    )
+    # per-runtime override wins for ollama, shared model for lmstudio
+    assert results[0].model == "override"
+    assert results[1].model == "shared"
+
+
+def test_compare_auto_detects_first_installed_model():
+    mgr = _manager_with({RuntimeType.OLLAMA: FakeRuntime(installed=["m1", "m2"])})
+    result = mgr.compare("hi", runtime_types=["ollama"])[0]
+    assert result.model == "m1"
+
+
+def test_compare_no_installed_model_reports_error():
+    mgr = _manager_with({RuntimeType.OLLAMA: FakeRuntime(installed=[])})
+    result = mgr.compare("hi", runtime_types=["ollama"])[0]
+    assert result.response is None
+    assert result.error == "No model available on this runtime"
+
+
+def test_compare_chat_failure_is_isolated():
+    mgr = _manager_with(
+        {
+            RuntimeType.OLLAMA: FakeRuntime(reply="a"),
+            RuntimeType.LMSTUDIO: FakeRuntime(fail_chat=True),
+        }
+    )
+    results = mgr.compare("hi", runtime_types=["ollama", "lmstudio"])
+    assert results[0].response == "a:auto-model"
+    assert results[1].response is None
+    assert "chat boom" in results[1].error
+
+
+def test_compare_deduplicates_repeated_runtime():
+    mgr = _manager_with({RuntimeType.OLLAMA: FakeRuntime()})
+    results = mgr.compare("hi", runtime_types=["ollama", "ollama"])
+    assert len(results) == 1

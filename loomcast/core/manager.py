@@ -14,7 +14,12 @@ from loomcast.common.config import LoomcastConfig
 from loomcast.common.exceptions import LoomcastError
 from loomcast.common.logging import logger
 from loomcast.core.verifier import ModelVerifier
-from loomcast.domain.entities import CatalogEntry, RuntimeType, VerificationResult
+from loomcast.domain.entities import (
+    CatalogEntry,
+    ComparisonResult,
+    RuntimeType,
+    VerificationResult,
+)
 from loomcast.ports.catalog import CatalogPort
 from loomcast.ports.runtime import RuntimePort
 
@@ -134,6 +139,86 @@ class LoomcastManager:
         target_type = self._resolve_runtime_type(runtime_type)
         verifier = ModelVerifier(self.runtimes)
         return verifier.verify(model, target_type)
+
+    def compare(
+        self,
+        prompt: str,
+        runtime_types: list[RuntimeType | str] | None = None,
+        model: str | None = None,
+        models: dict[RuntimeType, str] | None = None,
+        max_concurrent: int = 3,
+    ) -> list[ComparisonResult]:
+        """Send the same prompt to several runtimes and collect their answers.
+
+        Args:
+            prompt: The user prompt sent to every selected runtime.
+            runtime_types: Runtimes to query, in display order. Defaults to all
+                configured runtimes.
+            model: Model name to use on every runtime that has no per-runtime
+                override.
+            models: Per-runtime model overrides, keyed by runtime type.
+            max_concurrent: Maximum runtimes queried in parallel.
+
+        Returns:
+            One ComparisonResult per selected runtime, in the requested order
+            (not completion order). A runtime that is offline, has no usable
+            model, or fails mid-request yields a result carrying ``error``
+            rather than aborting the whole comparison.
+
+        Model resolution per runtime: a per-runtime override in ``models`` wins,
+        then the shared ``model``, then the runtime's first installed model.
+        """
+        if runtime_types:
+            resolved = [self._resolve_runtime_type(rt) for rt in runtime_types]
+            targets: list[RuntimeType] = []
+            for rt in resolved:  # de-duplicate while preserving order
+                if rt not in targets:
+                    targets.append(rt)
+        else:
+            targets = list(self.runtimes.keys())
+
+        overrides = models or {}
+        messages = [{"role": "user", "content": prompt}]
+
+        def _run_one(rtype: RuntimeType) -> ComparisonResult:
+            adapter = self.runtimes[rtype]
+            if not adapter.is_available():
+                return ComparisonResult(
+                    runtime_type=rtype, available=False, error="Runtime offline"
+                )
+
+            chosen = overrides.get(rtype) or model
+            if chosen is None:
+                try:
+                    installed = adapter.list_installed()
+                except LoomcastError as e:
+                    return ComparisonResult(runtime_type=rtype, error=str(e))
+                if not installed:
+                    return ComparisonResult(
+                        runtime_type=rtype,
+                        error="No model available on this runtime",
+                    )
+                chosen = installed[0]
+
+            try:
+                reply = adapter.chat(chosen, messages)
+                return ComparisonResult(
+                    runtime_type=rtype, model=chosen, response=reply
+                )
+            except LoomcastError as e:
+                return ComparisonResult(runtime_type=rtype, model=chosen, error=str(e))
+
+        results: dict[RuntimeType, ComparisonResult] = {}
+        workers = max(1, min(max_concurrent, len(targets)))
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            future_to_type = {
+                executor.submit(_run_one, rtype): rtype for rtype in targets
+            }
+            for future in as_completed(future_to_type):
+                rtype = future_to_type[future]
+                results[rtype] = future.result()
+
+        return [results[rtype] for rtype in targets]
 
     def search(self, query: str) -> list[CatalogEntry]:
         """Search the model catalog by query string."""

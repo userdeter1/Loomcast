@@ -49,6 +49,9 @@ loomcast install-category code --backend ollama
 # Send a prompt to a model
 loomcast chat llama3 "Hello world!" --backend ollama
 
+# Send one prompt to every runtime and compare answers side by side
+loomcast compare "Explain recursion in one sentence."
+
 # Verify installed model integrity
 loomcast verify llama3 --backend ollama
 
@@ -95,6 +98,10 @@ response = loomcast.chat(
     "llama3", [{"role": "user", "content": "Hello!"}], runtime_type="ollama"
 )
 print(response)
+
+# Compare the same prompt across runtimes
+for result in loomcast.compare("Explain recursion in one sentence."):
+    print(result.runtime_type.value, "->", result.response or result.error)
 
 # Verify model integrity
 verification = loomcast.verify("llama3", runtime_type="ollama")

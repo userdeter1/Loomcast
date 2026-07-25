@@ -50,3 +50,17 @@ class VerificationResult(BaseModel):
     verified: bool
     digest: Optional[str] = None
     message: str
+
+
+class ComparisonResult(BaseModel):
+    """Pure domain entity representing one runtime's answer in a multi-runtime comparison.
+
+    Exactly one of ``response`` or ``error`` is set. ``available`` is False when the
+    runtime was offline, in which case ``error`` explains why and ``model`` is None.
+    """
+
+    runtime_type: RuntimeType
+    model: Optional[str] = None
+    response: Optional[str] = None
+    error: Optional[str] = None
+    available: bool = True

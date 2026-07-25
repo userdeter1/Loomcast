@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import os
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 import typer
+from rich.columns import Columns
 from rich.console import Console
 from rich.markup import escape
 from rich.panel import Panel
@@ -214,6 +215,67 @@ def chat_cmd(
     except LoomcastError as e:
         console.print(f"[bold red]Chat error:[/bold red] {escape(str(e))}")
         raise typer.Exit(code=1) from None
+
+
+@app.command("compare")
+def compare_cmd(
+    prompt: str = typer.Argument(..., help="Prompt sent to every selected runtime"),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        "-m",
+        help="Model to use on every runtime; each runtime's first installed "
+        "model is used when omitted",
+    ),
+    # noqa B008: a typer.Option sentinel in the default is intentional; ruff only
+    # flags it here because the List annotation trips its mutable-default heuristic.
+    backends: Optional[List[str]] = typer.Option(  # noqa: B008
+        None,
+        "--backend",
+        "-b",
+        help="Restrict to specific runtimes (repeatable); defaults to all",
+    ),
+):
+    """Send one prompt to several runtimes and show the answers side by side."""
+    manager = get_manager()
+    try:
+        with console.status("[bold green]Querying runtimes...[/bold green]"):
+            results = manager.compare(prompt, runtime_types=backends, model=model)
+    except LoomcastError as e:
+        console.print(f"[bold red]Comparison error:[/bold red] {escape(str(e))}")
+        raise typer.Exit(code=1) from None
+
+    if not results:
+        console.print("[yellow]No runtimes selected to compare.[/yellow]")
+        raise typer.Exit(code=1)
+
+    panels = []
+    for r in results:
+        name = r.runtime_type.value.upper()
+        if r.response is not None:
+            # Render model output as literal text: a reply containing rich-markup
+            # characters (e.g. "[/path]") must not be parsed or crash the render.
+            panels.append(
+                Panel(
+                    Text(r.response),
+                    title=f"{name} ({escape(r.model)})",
+                    border_style="cyan",
+                )
+            )
+        else:
+            title = f"{name} ({escape(r.model)})" if r.model else name
+            panels.append(
+                Panel(
+                    Text(r.error or "Unknown error"),
+                    title=title,
+                    border_style="red",
+                )
+            )
+
+    console.print(Columns(panels, equal=True, expand=True))
+
+    if not any(r.response is not None for r in results):
+        raise typer.Exit(code=1)
 
 
 @app.command("config")

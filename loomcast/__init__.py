@@ -23,6 +23,7 @@ from loomcast.core.manager import LoomcastManager
 from loomcast.domain.entities import (
     CatalogEntry,
     ChatMessage,
+    ComparisonResult,
     Model,
     RuntimeType,
     VerificationResult,
@@ -92,6 +93,23 @@ def chat(
     return get_manager().chat(model, messages, runtime_type=runtime_type)
 
 
+def compare(
+    prompt: str,
+    runtime_types: list[RuntimeType | str] | None = None,
+    model: str | None = None,
+    models: dict[RuntimeType, str] | None = None,
+    max_concurrent: int = 3,
+) -> list[ComparisonResult]:
+    """Send one prompt to several runtimes and collect their answers."""
+    return get_manager().compare(
+        prompt,
+        runtime_types=runtime_types,
+        model=model,
+        models=models,
+        max_concurrent=max_concurrent,
+    )
+
+
 def install(
     model: str,
     runtime_type: RuntimeType | str | None = None,
@@ -141,6 +159,7 @@ __all__ = [
     "CatalogEntry",
     "CatalogIntegrityError",
     "ChatMessage",
+    "ComparisonResult",
     "ConfigurationError",
     "LlamaCppRuntime",
     "LoomcastConfig",
@@ -156,6 +175,7 @@ __all__ = [
     "RuntimeUnavailableError",
     "VerificationResult",
     "chat",
+    "compare",
     "get_manager",
     "install",
     "install_category",

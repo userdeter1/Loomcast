@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `compare` command and `loomcast.compare()` SDK function: send one prompt to
+  several runtimes at once and show the answers side by side, one panel per
+  runtime. Each runtime's model is auto-detected (first installed) unless a
+  shared `--model` or per-runtime override is given. Runtimes are queried
+  concurrently; an offline or failing runtime yields an error panel rather than
+  aborting the comparison, and responses render as literal text so markup-like
+  model output cannot break the display. Adds the `ComparisonResult` domain
+  entity.
+
 ### Changed
 - The release workflow no longer rebuilds the package when publishing to
   production PyPI. It now downloads the artifacts attached to the tagged release
